@@ -12,10 +12,8 @@ const C = {
 	SCREEN_WIRING:   1,
 	SCREEN_PINS:     2,
 	SCREEN_KEYMAP:   3,
-	SCREEN_MACROS:   4,
-	SCREEN_QUANTUM:  5,
-	SCREEN_SETTINGS: 6,
-	SCREEN_COMPILE:  7,
+	SCREEN_SETTINGS: 4,
+	SCREEN_COMPILE:  5,
 
 	// Display properties.
 	KEY_SIZE: 60,
@@ -35,6 +33,7 @@ const C = {
 	CONTROLLER_ATMEGA32U2: 0,
 	CONTROLLER_ATMEGA32U4: 1,
 	CONTROLLER_AT90USB1286: 2,
+	CONTROLLER_ATXMEGA32A4U: 3,
 
 	// Pins.
 	PINS: {
@@ -57,7 +56,31 @@ const C = {
 			'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7',
 			'E0', 'E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7',
 			'F0', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7'
+		],
+		3: [ // CONTROLLER_ATXMEGA32A4U
+			'A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7',
+			'B0', 'B1', 'B2', 'B3',
+			'C0', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7',
+			'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7',
+			'E0', 'E1', 'E2', 'E3',
+			'R0', 'R1'
 		]
+	},
+
+	// Backlight Pins.
+	BACKLIGHT_PINS: {
+		0: [ // CONTROLLER_ATMEGA32U2 
+			'B5', 'B6', 'B7'
+		],
+		1: [ // CONTROLLER_ATMEGA32U4
+			'B5', 'B6', 'B7'
+		],
+		2: [ // CONTROLLER_AT90USB1286
+			'B5', 'B6', 'B7'
+		],
+		3: [ // CONTROLLER_ATXMEGA32A4U
+			'B0', 'B1', 'B2'
+		],
 	},
 
 	// Keycodes.

@@ -22,6 +22,7 @@ class Pins extends React.Component {
 				<option value={ C.CONTROLLER_ATMEGA32U2 }>ATmega32U2</option>
 				<option value={ C.CONTROLLER_ATMEGA32U4 }>ATmega32U4</option>
 				<option value={ C.CONTROLLER_AT90USB1286 }>AT90USB1286</option>
+				<option value={ C.CONTROLLER_ATXMEGA32A4U }>ATxmega32A4U</option>
 			</select>
 			<Help>
 				<strong>ATmega32U2</strong>: Alps64

@@ -1,7 +1,8 @@
-const RulesMKGenerator = require('./generators/rules.mk');
-const ConfigHGenerator = require('./generators/config.h');
-const KbHGenerator = require('./generators/kb.h');
-const KeymapCGenerator = require('./generators/keymap.c');
+//const RulesMKGenerator = require('./generators/rules.mk');
+//const ConfigHGenerator = require('./generators/config.h');
+//const KbHGenerator = require('./generators/kb.h');
+//const KeymapCGenerator = require('./generators/keymap.c');
+const KeyplusYGenerator = require('./generators/layout.yaml');
 
 class Files {
 
@@ -14,10 +15,7 @@ class Files {
 	 */
 	static generate(keyboard) {
 		return {
-			'qmk_firmware/keyboards/kb/rules.mk': new RulesMKGenerator(keyboard).generate(),
-			'qmk_firmware/keyboards/kb/config.h': new ConfigHGenerator(keyboard).generate(),
-			'qmk_firmware/keyboards/kb/kb.h': new KbHGenerator(keyboard).generate(),
-			'qmk_firmware/keyboards/kb/keymaps/default/keymap.c': new KeymapCGenerator(keyboard).generate()
+			'layout.yaml': new KeyplusYGenerator(keyboard).generate(),
 		};
 	}
 

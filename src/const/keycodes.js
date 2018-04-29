@@ -91,6 +91,7 @@ const keycodes = {
 	'KC_TRNS': new Keycode('KC_TRNS', 'TRNS', []),
 	'KC_ROLL_OVER': new Keycode('KC_ROLL_OVER', 'ROLL_OVER', []),
 	'KC_POST_FAIL': new Keycode('KC_POST_FAIL', 'POST_FAIL', []),
+	'KC_GESC': new Keycode('KC_GESC', 'esc`', []),
 	'KC_A': new Keycode('KC_A', 'A', []),
 	'KC_B': new Keycode('KC_B', 'B', []),
 	'KC_C': new Keycode('KC_C', 'C', []),
@@ -438,13 +439,13 @@ const categories = {
 	],
 
 	'LIGHTING': [
-		'BL_TOGG', 'BL_DEC', 'BL_INC', 'BL_STEP', '',
+		//'BL_TOGG', 'BL_DEC', 'BL_INC', 'BL_STEP', '',
 
-		'RGB_TOG', 'RGB_MOD', 'RGB_HUI', 'RGB_HUD', 'RGB_SAI', 'RGB_SAD', 'RGB_VAI', 'RGB_VAD'
+		//'RGB_TOG', 'RGB_MOD', 'RGB_HUI', 'RGB_HUD', 'RGB_SAI', 'RGB_SAD', 'RGB_VAI', 'RGB_VAD'
 	],
 
 	'FN': [
-		'LCTL()', 'LSFT()', 'LALT()', 'LGUI()', 'RCTL()', 'RSFT()', 'RALT()', 'RGUI()', 'HYPR()', 'MEH()', 'LCAG()', 'ALTG()', '',
+		'KC_GESC', 'LCTL()', 'LSFT()', 'LALT()', 'LGUI()', 'RCTL()', 'RSFT()', 'RALT()', 'RGUI()', 'HYPR()', 'MEH()', 'LCAG()', 'ALTG()', '',
 
 		'LT()', 'TO()', 'MO()', 'DF()', 'TG()', 'OSL()', 'OSM()', 'MT()', '',
 
