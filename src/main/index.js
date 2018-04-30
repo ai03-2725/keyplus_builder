@@ -26,7 +26,7 @@ class Index extends React.Component {
 
 		return <div>
 			<div className='header'>
-				Keyplus Builder
+				keyplus builder
 			</div>
 			<Screen
 				state={ this.state }/>

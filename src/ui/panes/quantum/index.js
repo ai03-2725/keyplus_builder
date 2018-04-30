@@ -12,7 +12,7 @@ class Quantum extends React.Component {
 		const keyboard = state.keyboard;
 
 		return <div className='pane-quantum'>
-			<strong>Do not touch this unless you know what you're doing!</strong>
+			<strong>Do not touch this unless you know what you are doing!</strong>
 			<br/>
 			Edit custom Quantum functions.
 			<div style={{ height: '0.5rem' }}/>
