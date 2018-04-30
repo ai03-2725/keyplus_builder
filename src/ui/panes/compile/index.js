@@ -27,7 +27,8 @@ class Compile extends React.Component {
 		const files = Files.generate(keyboard);
 
 		// Get the firmware stencil.
-		JSZipUtils.getBinaryContent('/files/empty.zip', (err, data) => {
+		// Note: original was /files/firmware.zip
+		JSZipUtils.getBinaryContent('static/files/firmware.zip', (err, data) => {
 			if (err) {
 				console.error(err);
 				state.error('Unable to retrieve files');
@@ -71,7 +72,7 @@ class Compile extends React.Component {
 			Download source files.
 			<div style={{ height: '0.5rem' }}/>
 			<button
-				className='light'
+				//className='light'
 				disabled={ !keyboard.valid || state.ui.get('compile-working', false) }
 				onClick={ this.downloadZip }>
 				Download .zip

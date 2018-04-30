@@ -90,7 +90,7 @@ class Selector extends React.Component {
 				const key = C.KEYCODE_CATEGORIES[this.state.tab][i];
 				if (key) {
 					if (this.props.limited && C.KEYCODE_SPECIAL.includes(key)) continue; // In limited mode, no special keycodes.
-					const buttonContent = this.state.tab === 'FN' ? key : C.KEYCODES[key].display;
+					const buttonContent = this.state.tab === 'FN' ? C.DISPLAY_FN[key] : C.KEYCODES[key].display;
 					const style = {};
 					if (keycode && key === keycode.id) style.borderColor = '#aaaaaa';
 					content.push(<button

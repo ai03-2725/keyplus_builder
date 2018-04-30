@@ -30,21 +30,17 @@ Create a `local.json` file in `src/const`, in the format:
 
     {
         "API": "",
-        "PRESETS": "presets/"
+        "PRESETS": "static/presets/"
     }
 
 (Copy any qmkbuilder format jsons you have into ``server/presets``)
 
 For testing 
 
-Go into the `server` directory and install dependencies and start the API server:
-```
-npm install
-npm run build
-node index.js
-```
+``npm run build`` builds the bundle.js file automatically as new files are generated.
 
-Then, go into the `static` directory and start a web server:
+
+``npm run deploy`` is a one-time build for deployment.
 
 *Python 3.x*:
 ```

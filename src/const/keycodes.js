@@ -365,22 +365,22 @@ const keycodes = {
 	'MEH()': new Keycode(new Template(['MEH', 'KEY'], 'MEH(%1)'), 'MEH + %1', []),
 	'LCAG()': new Keycode(new Template(['LCAG', 'KEY'], 'LCAG(%1)'), 'LCAG + %1', []),
 	'ALTG()': new Keycode(new Template(['ALTG', 'KEY'], 'ALTG(%1)'), 'ALTGR + %1', []),
-	'LT()': new Keycode(new Template(['LT', 'LAYER', 'KEY'], 'LT(%1, %2)'), 'LT(%1, %2)', []),
-	'TO()': new Keycode(new Template(['TO', 'LAYER'], 'TO(%1)'), 'TO(%1)', []),
-	'MO()': new Keycode(new Template(['MO', 'LAYER'], 'MO(%1)'), 'MO(%1)', []),
+	'LT()': new Keycode(new Template(['LT', 'LAYER', 'KEY'], 'LT(%1, %2)'), '%2>L%1', []),
+	'TO()': new Keycode(new Template(['TO', 'LAYER'], 'TO(%1)'), 't_L%1', []),
+	'MO()': new Keycode(new Template(['MO', 'LAYER'], 'MO(%1)'), 'L%1', []),
 	'DF()': new Keycode(new Template(['DF', 'LAYER'], 'DF(%1)'), 'DF(%1)', []),
-	'TG()': new Keycode(new Template(['TG', 'LAYER'], 'TG(%1)'), 'TG(%1)', []),
-	'OSL()': new Keycode(new Template(['OSL', 'LAYER'], 'OSL(%1)'), 'OSL(%1)', []),
-	'OSM()': new Keycode(new Template(['OSM', 'MOD'], 'OSM(%1)'), 'OSM(%1)', []),
-	'MT()': new Keycode(new Template(['MT', 'MOD', 'KEY'], 'MT(%1, %2)'), 'MT(%1, %2)', []),
-	'CTL_T()': new Keycode(new Template(['CTL_T', 'KEY'], 'CTL_T(%1)'), 'CTRL_T(%1)', []),
-	'SFT_T()': new Keycode(new Template(['SFT_T', 'KEY'], 'SFT_T(%1)'), 'SHIFT_T(%1)', []),
-	'ALT_T()': new Keycode(new Template(['ALT_T', 'KEY'], 'ALT_T(%1)'), 'ALT_T(%1)', []),
-	'GUI_T()': new Keycode(new Template(['GUI_T', 'KEY'], 'GUI_T(%1)'), 'GUI_T(%1)', []),
-	'C_S_T()': new Keycode(new Template(['C_S_T', 'KEY'], 'C_S_T(%1)'), 'C_S_T(%1)', []),
-	'MEH_T()': new Keycode(new Template(['MEH_T', 'KEY'], 'MEH_T(%1)'), 'MEH_T(%1)', []),
-	'LCAG_T()': new Keycode(new Template(['LCAG_T', 'KEY'], 'LCAG_T(%1)'), 'LCAG_T(%1)', []),
-	'ALL_T()': new Keycode(new Template(['ALL_T', 'KEY'], 'ALL_T(%1)'), 'ALL_T(%1)', []),
+	'TG()': new Keycode(new Template(['TG', 'LAYER'], 'TG(%1)'), 'tog_L%1', []),
+	'OSL()': new Keycode(new Template(['OSL', 'LAYER'], 'OSL(%1)'), 'stickyL%1', []),
+	'OSM()': new Keycode(new Template(['OSM', 'MOD'], 'OSM(%1)'), 'sticky_%1', []),
+	'MT()': new Keycode(new Template(['MT', 'MOD', 'KEY'], 'MT(%1, %2)'), '%2>%1', []),
+	'CTL_T()': new Keycode(new Template(['CTL_T', 'KEY'], 'CTL_T(%1)'), '%1>C-none', []),
+	'SFT_T()': new Keycode(new Template(['SFT_T', 'KEY'], 'SFT_T(%1)'), '%1>S-none', []),
+	'ALT_T()': new Keycode(new Template(['ALT_T', 'KEY'], 'ALT_T(%1)'), '%1>A-none', []),
+	'GUI_T()': new Keycode(new Template(['GUI_T', 'KEY'], 'GUI_T(%1)'), '%1>G-none', []),
+	'C_S_T()': new Keycode(new Template(['C_S_T', 'KEY'], 'C_S_T(%1)'), '%1>CS-none', []),
+	'MEH_T()': new Keycode(new Template(['MEH_T', 'KEY'], 'MEH_T(%1)'), '%1>CSA-none', []),
+	'LCAG_T()': new Keycode(new Template(['LCAG_T', 'KEY'], 'LCAG_T(%1)'), '%1>CAG-none', []),
+	'ALL_T()': new Keycode(new Template(['ALL_T', 'KEY'], 'ALL_T(%1)'), '%1>CSAG-none', []),
 	'M()': new Keycode(new Template(['M', 'MACRO'], 'M(%1)'), 'MACRO(%1)', [])
 };
 
@@ -445,13 +445,20 @@ const categories = {
 	],
 
 	'FN': [
-		'KC_GESC', 'LCTL()', 'LSFT()', 'LALT()', 'LGUI()', 'RCTL()', 'RSFT()', 'RALT()', 'RGUI()', 'HYPR()', 'MEH()', 'LCAG()', 'ALTG()', '',
 
-		'LT()', 'TO()', 'MO()', 'DF()', 'TG()', 'OSL()', 'OSM()', 'MT()', '',
+		'KC_GESC', '',
 
-		'CTL_T()', 'SFT_T()', 'ALT_T()', 'GUI_T()', 'C_S_T()', 'MEH_T()', 'LCAG_T()', 'ALL_T()', '',
+		'LCTL()', 'LSFT()', 'LALT()', 'LGUI()', 'RCTL()', 'RSFT()', 'RALT()', 'RGUI()', '',
 
-		'M()'
+		'ALTG()', 'LCAG()', 'MEH()', 'HYPR()', '',
+
+		'TO()', 'MO()', 'TG()', 'OSL()', 'LT()', '',
+
+		'OSM()', 'MT()', 'CTL_T()', 'SFT_T()', 'ALT_T()', 'GUI_T()', '',
+
+		'C_S_T()', 'MEH_T()', 'LCAG_T()', 'ALL_T()', '',
+
+		//'M()'
 	]
 };
 
@@ -941,6 +948,40 @@ const legacy_mods = {
     "MOD_HYPR" : "CSAG",
 }
 
+const display_functions = {
+
+	'KC_GESC' : '`esc', 
+	'LCTL()' : 'C-', 
+	'LSFT()' : 'S-', 
+	'LALT()' : 'A-', 
+	'LGUI()' : 'G-', 
+	'RCTL()' : 'rC-', 
+	'RSFT()' : 'rS-', 
+	'RALT()' : 'rA-', 
+	'RGUI()' : 'rG-', 
+	'HYPR()' : 'HYPR-', 
+	'MEH()'  : 'MEH-', 
+	'LCAG()' : 'CAG-', 
+	'ALTG()' : 'rCrA-',
+	'LT()' : 'Tap>L', 
+	'TO()' : 'set_L', 
+	'MO()' : 'L', 
+	'DF()' : 'L', 
+	'TG()' : 'tog_L', 
+	'OSL()' : 'stickyL', 
+	'OSM()' : 'stickyMod', 
+	'MT()' : 'Tap>Mod',
+	'CTL_T()' : 'Tap>C-', 
+	'SFT_T()' : 'Tap>S-', 
+	'ALT_T()' : 'Tap>A-', 
+	'GUI_T()' : 'Tap>G-', 
+	'C_S_T()' : 'Tap>CS-', 
+	'MEH_T()' : 'Tap>MEH-', 
+	'LCAG_T()' : 'Tap>CAG-', 
+	'ALL_T()' : 'Tap>HYPR-',
+    'M()' : 'M()',
+}
+
 module.exports = {
 
 	KEYCODES: keycodes,
@@ -956,4 +997,5 @@ module.exports = {
 	KEYPLUS_DOUBLE: keyplus_double_param,
 	KEYPLUS_MODTAP: keyplus_modtap,
 	LEGACY_MODS: legacy_mods,
+	DISPLAY_FN: display_functions,
 };
