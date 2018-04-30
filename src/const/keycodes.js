@@ -850,82 +850,95 @@ const keyplus_keycodes = {
 }
 
 // QMK -> Keyplus Layer Functions
-const keyp_layer_func = {
+const keyplus_layers = {
 
-    "MO(" : "L",
-    "TG(" : "tog_L",
-    "TT(" : "L",
-    "OSL(" : "s_L",
-    "TO(" : "set_L",
-    "DF(" : "set_L",
+    "MO" : "L",
+    "TG" : "tog_L",
+    "TT" : "L",
+    "OSL" : "s_L",
+    "TO" : "set_L",
+    "DF" : "set_L",
 
 }
 
 // QMK -> Keyplus Modifier functions
-const keyp_mods = {
+const keyplus_mods = {
     // Mod Keys
-    "LCTL(" : "C",
-    "LSFT(" : "S",
-    "S(" : "S",
-    "LALT(" : "A",
-    "LGUI(" : "G",
-    "LCMD(" : "G",
-    "LWIN(" : "G",
-    "RCTL(" : "rC",
-    "RSFT(" : "rS",
-    "RALT(" : "rA",
-    "RGUI(" : "rG",
-    "RWIN(" : "rG",
-    "RCMD(" : "rG",
+    "LCTL" : "C",
+    "LSFT" : "S",
+    "LALT" : "A",
+    "LGUI" : "G",
+    "LCMD" : "G",
+    "LWIN" : "G",
+    "RCTL" : "rC",
+    "RSFT" : "rS",
+    "RALT" : "rA",
+    "RGUI" : "rG",
+    "RWIN" : "rG",
+    "RCMD" : "rG",
     // Multi Mod Keys
-    "SGUI(" : "SG",
-    "SCMD(" : "SG",
-    "SWIN(" : "SG",
-    "LCA(" : "CA",
-    "ALTG(" : "rCrA",
-    "LCAG(" : "CAG",
-    "MEH(" : "CSA",
-    "HYPR(" : "CSAG",
+    "SGUI" : "SG",
+    "SCMD" : "SG",
+    "SWIN" : "SG",
+    "LCA" : "CA",
+    "ALTG" : "rCrA",
+    "LCAG" : "CAG",
+    "MEH" : "CSA",
+    "HYPR" : "CSAG",
 
-    "OSM(KC_LSFT)" : "s_lsft",
-    "OSM(KC_LCTL)" : "s_lctrl",
-    "OSM(KC_LALT)" : "s_lalt",
-    "OSM(KC_LGUI)" : "s_lgui",
-    "OSM(KC_RSFT)" : "s_rsft",
-    "OSM(KC_RCTL)" : "s_rctrl",
-    "OSM(KC_RALT)" : "s_ralt",
-    "OSM(KC_RGUI)" : "s_rgui",
+    "OSM(MOD_LSFT)" : "s_lsft",
+    "OSM(MOD_LCTL)" : "s_lctrl",
+    "OSM(MOD_LALT)" : "s_lalt",
+    "OSM(MOD_LGUI)" : "s_lgui",
+    "OSM(MOD_RCTL)" : "s_rctrl",
+    "OSM(MOD_RSFT)" : "s_rsft",
+    "OSM(MOD_RALT)" : "s_ralt",
+    "OSM(MOD_RGUI)" : "s_rgui",
 }
 
-const keyp_tap_layer = {
-    "LT(" : "L",
-    "LM(" : "L",
+const keyplus_double_param = {
+    "LT" : "L",
+    //"LM" : "L",
+    "MT" : "",
 }
 
-const keyp_tap_mod = {
-    "LCTL_T(" : "C",
-    "CTL_T(" : "C",
-    "RCTL_T(" : "rC",  
-    "LSFT_T(" : "S",
-    "SFT_T(" : "S",
-    "RSFT_T(" : "rS",
-    "LALT_T(" : "A",
-    "ALT_T(" : "A",
-    "RALT_T(" : "rA",
+const keyplus_modtap = {
+    "LCTL_T" : "C",
+    "CTL_T" : "C",
+    "RCTL_T" : "rC",  
+    "LSFT_T" : "S",
+    "SFT_T" : "S",
+    "RSFT_T" : "rS",
+    "LALT_T" : "A",
+    "ALT_T" : "A",
+    "RALT_T" : "rA",
     "ALGR_T" : "rA",
-    "LGUI_T(" : "G",
-    "LCMD_T(" : "G",
-    "GUI_T(" : "G",
-    "RGUI_T(" : "rG",
-    "RCMD_T(" : "rG",
-    "RWIN_T(" : "rG",
-    "LCA_T(" : "CA",
-    "C_S_T(" : "CS",
-    "MEH_T(" : "CSA",
-    "LCAG_T(" : "CAG",
-    "RCAG_T(" : "rCrArG",
-    "ALL_T(" : "CSAG",
-    "SCMD_T(" : "SG",
+    "LGUI_T" : "G",
+    "LCMD_T" : "G",
+    "GUI_T" : "G",
+    "RGUI_T" : "rG",
+    "RCMD_T" : "rG",
+    "RWIN_T" : "rG",
+    "LCA_T" : "CA",
+    "C_S_T" : "CS",
+    "MEH_T" : "CSA",
+    "LCAG_T" : "CAG",
+    "RCAG_T" : "rCrArG",
+    "ALL_T" : "CSAG",
+    "SCMD_T" : "SG",
+}
+
+const legacy_mods = {
+    "MOD_LSFT" : "S",
+    "MOD_LCTL" : "C",
+    "MOD_LALT" : "A",
+    "MOD_LGUI" : "G",
+    "MOD_RCTL" : "rC",
+    "MOD_RSFT" : "rS",
+    "MOD_RALT" : "rA",
+    "MOD_RGUI" : "rG",
+    "MOD_MEH"  : "CSA",
+    "MOD_HYPR" : "CSAG",
 }
 
 module.exports = {
@@ -937,6 +950,10 @@ module.exports = {
 	NUMBERS: numbers,
 	SPECIAL: special,
 	RECOMMENDED: recommended,
-	KEYPLUS_KEYCODES: keyplus_keycodes
-
+	KEYPLUS_KEYCODES: keyplus_keycodes,
+	KEYPLUS_MODS: keyplus_mods,
+	KEYPLUS_LAYER: keyplus_layers,
+	KEYPLUS_DOUBLE: keyplus_double_param,
+	KEYPLUS_MODTAP: keyplus_modtap,
+	LEGACY_MODS: legacy_mods,
 };
