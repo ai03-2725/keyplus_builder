@@ -91,6 +91,7 @@ const C = {
 	KEYCODE_NUMBERS: Keycodes.NUMBERS,
 	KEYCODE_SPECIAL: Keycodes.SPECIAL,
 	KEYCODE_RECOMMENDED: Keycodes.RECOMMENDED,
+	KEYCODE_KEYPLUS: Keycodes.KEYPLUS_KEYCODES,
 
 	// Keymap.
 	KEYMAP_MAX_LAYERS: 16,
@@ -126,6 +127,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 	// Local settings.
 	LOCAL: Local
+
 
 };
 

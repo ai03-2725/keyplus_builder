@@ -19,12 +19,14 @@ class KeyplusY extends Generator {
 						const key = keyboard.wiring[row + ',' + col];
 						if (!key || !key.length) continue;
 						let keycode = key[0].keycodes[layer].getCode()
-						//if (keycode.includes('(') && endsWith(')')) {
-							//keycode += '+'
-						//}
-						//else {
-							//keycode += '*'
-						//}
+						if (keycode.includes('(') && keycode.endsWith(')')) {
+							keycode += '+'
+						}
+						else {
+							if (keycode in C.KEYCODE_KEYPLUS){
+								keycode = C.KEYCODE_KEYPLUS[keycode]
+							}
+						}
 						layerMap += keycode + ', ';
 					}
 					layerMap += '\n          ';
