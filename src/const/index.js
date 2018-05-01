@@ -83,6 +83,20 @@ const C = {
 		],
 	},
 
+	KLE_VARS: {
+	    'rx:' : '"rx":',
+	    'ry:' : '"ry":',
+	    'x2:' : '"x2":',
+	    'y2:' : '"y2":',
+	    'w2:' : '"w2":',
+	    'h2:' : '"h2":',
+	    'x:'  : '"x":',
+	    'y:'  : '"y":',
+	    'r:'  : '"r":',
+	    'w:'  : '"w":',
+	    'h:'  : '"h":'
+	},
+
 	// Keycodes.
 	KEYCODES: Keycodes.KEYCODES,
 	KEYCODE_ALIASES: Keycodes.ALIASES,

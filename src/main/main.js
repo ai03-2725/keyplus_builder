@@ -5,6 +5,8 @@ const Keyboard = require('state/keyboard');
 const C = require('const');
 const Utils = require('utils');
 
+const YAML = require('js-yaml');
+
 const Request = require('superagent');
 
 class Main extends React.Component {
@@ -14,6 +16,7 @@ class Main extends React.Component {
 
 		// Bind functions.
 		this.upload = this.upload.bind(this);
+		this.upload_keyplus_yaml = this.upload_keyplus_yaml.bind(this);
 		this.useKLE = this.useKLE.bind(this);
 		this.usePreset = this.usePreset.bind(this);
 	}
@@ -38,7 +41,58 @@ class Main extends React.Component {
 
 				state.update({
 					keyboard: keyboard,
-					screen: C.SCREEN_WIRING // Switch to the wiring screen.
+					screen: C.SCREEN_KEYMAP // Switch to the wiring screen.
+				});
+			} catch (e) {
+				console.error(e);
+				state.error('Invalid configuration');
+			}
+		});
+	}
+
+	/*
+	 * Upload a Keyplus YAML
+	 */
+	upload_keyplus_yaml() {
+		const state = this.props.state;
+
+		// Upload a file.
+		Utils.readFile(contents => {
+			try {
+				for (let key in C.KLE_VARS) {
+					let value = C.KLE_VARS[key];
+					let reg = new RegExp(key, "g")
+					contents = contents.replace(reg, value);
+				}
+				// Deserialize the contents.
+				const data = YAML.safeLoad(contents);
+
+				let devices = Object.keys(data['devices'])
+				// for name in devices would go here
+				let name = devices[0]
+				let layout_name = data['devices'][name]['layout']
+
+				let info = {
+					'name': name,
+					//'id': data['devices'][name]['id'],
+					'mcu': data['devices'][name]['mcu'],
+					//'layout_offset': data['devices'][name]['layout_offset'],
+					'diode': data['devices'][name]['scan_mode']['mode'],
+					'rows': data['devices'][name]['scan_mode']['rows'],
+					'cols': data['devices'][name]['scan_mode']['cols'],
+					'matrix': data['devices'][name]['scan_mode']['matrix_map'],
+					'kle': data['devices'][name]['layout-kle'],
+					'layout': data['layouts'][layout_name]['layers'],
+				}
+				console.log(info)
+
+				// Build a new keyboard.
+				const keyboard = new Keyboard(state, info, true);
+				console.log(keyboard)
+
+				state.update({
+					keyboard: keyboard,
+					screen: C.SCREEN_KEYMAP // Switch to the wiring screen.
 				});
 			} catch (e) {
 				console.error(e);
@@ -68,6 +122,7 @@ class Main extends React.Component {
 				keyboard: keyboard,
 				screen: C.SCREEN_WIRING // Switch to the wiring screen.
 			});
+			state.message('Loading from KLE requires manual wiring of matrix\nEnsure that row/cols correspond to actual keyboad pinout')
 		} catch (e) {
 			console.error(e);
 			state.error('Invalid layout');
@@ -97,6 +152,8 @@ class Main extends React.Component {
 					// Build a new keyboard.
 					const keyboard = Keyboard.deserialize(state, deserialized.keyboard);
 
+					console.log(keyboard)
+
 					state.update({
 						keyboard: keyboard,
 						screen: C.SCREEN_KEYMAP // Switch to the keymap screen.
@@ -112,10 +169,10 @@ class Main extends React.Component {
 		const state = this.props.state;
 
 		return <div>
-			<h3>Upload Keyboard Firmware Builder configuration</h3>
+			<h3>Upload keyplus format yaml</h3>
 			<button
 				className='block'
-				onClick={ this.upload }>
+				onClick={ this.upload_keyplus_yaml }>
 				Upload
 			</button>
 			<br/><br/>
@@ -151,3 +208,13 @@ class Main extends React.Component {
 }
 
 module.exports = Main;
+
+/*
+<h3>Upload Keyboard Firmware Builder configuration</h3>
+<button
+	className='block'
+	onClick={ this.upload }>
+	Upload
+</button>
+<br/><br/>
+*/

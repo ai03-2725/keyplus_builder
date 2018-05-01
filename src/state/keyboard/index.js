@@ -11,63 +11,138 @@ class Keyboard {
 	 * @param {State} state The state associated with this keyboard.
 	 * @param {Object} json If defined, the KLE json to load from.
 	 */
-	constructor(state, json) {
-		this.state = state;
-		this.keys = [];
-		this.bounds = {
-			min: { x: Number.MAX_VALUE, y: Number.MAX_VALUE },
-			max: { x: Number.MIN_VALUE, y: Number.MIN_VALUE }
-		};
-		this.wiring = {};
-		this._rows = 1;
-		this._cols = 1;
-		this._controller = C.CONTROLLER_ATMEGA32U4;
-		this.pins = {
-			row: [],
-			col: [],
-			num: null,
-			caps: null,
-			scroll: null,
-			compose: null,
-			kana: null,
-			led: null,
-			rgb: null
-		};
-		this.macros = {};
-		this.quantum = C.QUANTUM_DEFAULT;
-		this.settings = {
-			diodeDirection: C.DIODE_COL2ROW,
-			name: '',
-			bootloaderSize: C.BOOTLOADER_4096,
-			rgbNum: 0,
-			backlightLevels: 3
-		};
+	constructor(state, data, is_yaml) {
 
-		this.valid = false;
-		this.errors = [];
-		this.warnings = [];
+			this.state = state;
+			this.keys = [];
+			this.bounds = {
+				min: { x: Number.MAX_VALUE, y: Number.MAX_VALUE },
+				max: { x: Number.MIN_VALUE, y: Number.MIN_VALUE }
+			};
+			this.wiring = {};
+			this._rows = 1;
+			this._cols = 1;
+			this._controller = C.CONTROLLER_ATMEGA32U4;
+			this.pins = {
+				row: [],
+				col: [],
+				num: null,
+				caps: null,
+				scroll: null,
+				compose: null,
+				kana: null,
+				led: null,
+				rgb: null
+			};
+			this.macros = {};
+			this.quantum = C.QUANTUM_DEFAULT;
+			this.settings = {
+				diodeDirection: C.DIODE_COL2ROW,
+				name: '',
+				bootloaderSize: C.BOOTLOADER_4096,
+				rgbNum: 0,
+				backlightLevels: 3
+			};
 
-		this.selected = null;
+			this.valid = false;
+			this.errors = [];
+			this.warnings = [];
 
-		// Bind methods.
-		this.importKLE = this.importKLE.bind(this);
-		this.updateWiring = this.updateWiring.bind(this);
-		this.estimateWiring = this.estimateWiring.bind(this);
-		this.setRowPin = this.setRowPin.bind(this);
-		this.setColPin = this.setColPin.bind(this);
-		this.setPin = this.setPin.bind(this);
-		this.updatePins = this.updatePins.bind(this);
-		this.getMacro = this.getMacro.bind(this);
-		this.setMacro = this.setMacro.bind(this);
-		this.setSetting = this.setSetting.bind(this);
-		this.verify = this.verify.bind(this);
-		this.serialize = this.serialize.bind(this);
+			this.selected = null;
 
-		this.deselect = this.deselect.bind(this);
+			// Bind methods.
+			this.importKLE = this.importKLE.bind(this);
+			this.parseKLE = this.parseKLE.bind(this);
+			this.updateWiring = this.updateWiring.bind(this);
+			this.estimateWiring = this.estimateWiring.bind(this);
+			this.setRowPin = this.setRowPin.bind(this);
+			this.setColPin = this.setColPin.bind(this);
+			this.setPin = this.setPin.bind(this);
+			this.updatePins = this.updatePins.bind(this);
+			this.getMacro = this.getMacro.bind(this);
+			this.setMacro = this.setMacro.bind(this);
+			this.setSetting = this.setSetting.bind(this);
+			this.verify = this.verify.bind(this);
+			this.serialize = this.serialize.bind(this);
 
-		// Import KLE if it exists.
-		if (json) this.importKLE(json);
+			this.deselect = this.deselect.bind(this);
 
+		//JSON
+		if (!is_yaml) {
+			// Import KLE if it exists.
+			if (data) this.importKLE(data);
+		}
+		// YAML
+		else {
+			/*
+				let info = {
+					'name': name,
+					DONE 'mcu': data['devices'][name]['mcu'],
+					DONE'diode': data['devices'][name]['scan_mode']['mode'],
+					DONE'rows': data['devices'][name]['scan_mode']['rows'],
+					DONE'cols': data['devices'][name]['scan_mode']['cols'],
+					'matrix': data['devices'][name]['scan_mode']['matrix_map'],
+					'kle': data['devices'][name]['layout-kle'],
+					'layout': data['layouts'][layout_name]['layers'],
+				}
+
+
+				this.settings = {
+					diodeDirection: C.DIODE_COL2ROW,
+					name: '',
+					bootloaderSize: C.BOOTLOADER_4096,
+					rgbNum: 0,
+					backlightLevels: 3
+				};
+			*/
+
+			this.settings['name'] = data['name'];
+			switch(data['mcu']) {
+				// ATMEGA
+				case 'atmega32u2': this._controller = C.CONTROLLER_ATMEGA32U2; break;
+				case 'atmega32u4': this._controller = C.CONTROLLER_ATMEGA32U4; break;
+				case 'at90usb1286': this._controller = C.CONTROLLER_AT90USB1286; break;
+				// XMEGA
+				case 'atxmega32a4u': this._controller = C.CONTROLLER_ATXMEGA32A4U; break;
+			}
+			switch(data['diode']) {
+				case 'col_row': this.settings['diodeDirection'] = C.DIODE_COL2ROW; break;
+				case 'row_col': this.setting['diodeDirection'] = C.DIODE_ROL2COL; break;
+			}
+			if (data['kle']) {
+				this.parseKLE(data['kle'])
+				// Pull layout data - WIP
+				let index = 0
+				console.log(data['matrix'])
+				for (const key of this.keys) {
+					console.log(index)
+					let row_col = data['matrix'][index]
+					console.log(row_col)
+					row_col = row_col.split('c')
+
+					key._row = Number(row_col[0].substring(1, row_col[0].length));
+					key._col = Number(row_col[1]);
+					index ++;
+				}
+			}
+			else {
+				this.estimateWiring();
+			}
+
+			
+			if (data['rows'].constructor === Array) {
+				this.pins.row = data['rows']
+				this._rows = data['rows'].length;
+			}
+			if (data['cols'].constructor === Array) {
+				this.pins.col = data['cols']
+				this._cols = data['cols'].length;
+			}
+			this.updateWiring();
+
+			console.log(data['matrix'])
+
+		}
 		// Verify validity.
 		this.verify();
 	}
@@ -78,7 +153,26 @@ class Keyboard {
 	 * @param {Object} json The KLE layout to import.
 	 */
 	importKLE(json) {
-		// Define starting states.
+		// Parse KLE -> Keys
+		this.parseKLE(json);
+
+		// Estimate the wiring.
+		this.estimateWiring();
+
+		// Initialize pins.
+		let usedPins = 0;
+		for (let i = 0; i < this.rows; i ++) {
+			this.pins.row.push(C.PINS[this.controller][Math.min(usedPins ++, C.PINS[this.controller].length)]);
+		}
+		for (let i = 0; i < this.cols; i ++) {
+			this.pins.col.push(C.PINS[this.controller][Math.min(usedPins ++, C.PINS[this.controller].length)]);
+		}
+	}
+	/*
+	 * Process KLE data
+	 */
+	parseKLE(data) {
+	// Define starting states.
 		const state = {
 			x: 0,
 			y: 0,
@@ -99,7 +193,7 @@ class Keyboard {
 
 		// Iterate through all the KLE data.
 		let keyIndex = 0;
-		for (const row of json) {
+		for (const row of data) {
 			for (const entry of row) {
 				// Check if the entry is a modifier.
 				if (entry instanceof Object) {
@@ -168,18 +262,6 @@ class Keyboard {
 		this.bounds.max.y -= this.bounds.min.y;
 		this.bounds.min.x = 0;
 		this.bounds.min.y = 0;
-
-		// Estimate the wiring.
-		this.estimateWiring();
-
-		// Initialize pins.
-		let usedPins = 0;
-		for (let i = 0; i < this.rows; i ++) {
-			this.pins.row.push(C.PINS[this.controller][Math.min(usedPins ++, C.PINS[this.controller].length)]);
-		}
-		for (let i = 0; i < this.cols; i ++) {
-			this.pins.col.push(C.PINS[this.controller][Math.min(usedPins ++, C.PINS[this.controller].length)]);
-		}
 	}
 
 	/*
@@ -491,7 +573,6 @@ class Keyboard {
 
 		return keyboard;
 	}
-
 }
 
 module.exports = Keyboard;
