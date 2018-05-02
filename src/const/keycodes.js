@@ -381,7 +381,9 @@ const keycodes = {
 	'MEH_T()': new Keycode(new Template(['MEH_T', 'KEY'], 'MEH_T(%1)'), '%1>CSA-none', []),
 	'LCAG_T()': new Keycode(new Template(['LCAG_T', 'KEY'], 'LCAG_T(%1)'), '%1>CAG-none', []),
 	'ALL_T()': new Keycode(new Template(['ALL_T', 'KEY'], 'ALL_T(%1)'), '%1>CSAG-none', []),
-	'M()': new Keycode(new Template(['M', 'MACRO'], 'M(%1)'), 'MACRO(%1)', [])
+	'M()': new Keycode(new Template(['M', 'MACRO'], 'M(%1)'), 'MACRO(%1)', []),
+	// New additions
+	'MOD()' : new Keycode(new Template(['MOD', 'MOD', 'KEY'], 'MOD(%1, %2)'),  '(%1)-%2', []),
 };
 
 // Generate aliases.
@@ -448,15 +450,17 @@ const categories = {
 
 		'KC_GESC', '',
 
-		'LCTL()', 'LSFT()', 'LALT()', 'LGUI()', 'RCTL()', 'RSFT()', 'RALT()', 'RGUI()', '',
+		//'LCTL()', 'LSFT()', 'LALT()', 'LGUI()',  'RCTL()', 'RSFT()', 'RALT()', 'RGUI()', '',
 
-		'ALTG()', 'LCAG()', 'MEH()', 'HYPR()', '',
+		'MOD()', 'OSM()', '',
 
-		'TO()', 'MO()', 'TG()', 'OSL()', 'LT()', '',
+		//'ALTG()', 'LCAG()', 'MEH()', 'HYPR()', '',
 
-		'OSM()', 'MT()', 'CTL_T()', 'SFT_T()', 'ALT_T()', 'GUI_T()', '',
+		'TO()', 'MO()', 'TG()', 'OSL()', '',
 
-		'C_S_T()', 'MEH_T()', 'LCAG_T()', 'ALL_T()', '',
+	    'LT()', 'MT()', '', //'CTL_T()', 'SFT_T()', 'ALT_T()', 'GUI_T()', '',
+
+		//'C_S_T()', 'MEH_T()', 'LCAG_T()', 'ALL_T()', '',
 
 		//'M()'
 	]
@@ -650,7 +654,6 @@ const keyplus_keycodes = {
     "KC_RSFT" : "rsft",
     "KC_LSFT" : "lsft",
     "KC_LGUI" : "lgui",
-    "KC_LCMD" : "lgui",
     "KC_RGUI" : "rgui",
     "KC_LALT" : "lalt",
     "KC_RALT" : "ralt",
@@ -800,15 +803,9 @@ const keyplus_keycodes = {
     "KC_LANG9" : "lang9",
 
     // Media Controls
-    "KC__MUTE" : "mute",
     "KC_MUTE" : "mute",
-    "KC_AUDIO_MUTE" : "mute",
     "KC_VOLU" : "volu",
-    "KC__VOLUP" : "volu",
-    "KC_AUDIO_VOL_UP" : "volu",
     "KC_VOLD" : "vold", 
-    "KC__VOLDOWN" : "vold",
-    "KC_AUDIO_VOL_DOWN": "vold",
     "KC_MNXT" : "mnxt",
     "KC_MPRV" : "mprv",
     "KC_MFFD" : "mffd",
@@ -861,10 +858,9 @@ const keyplus_layers = {
 
     "MO" : "L",
     "TG" : "tog_L",
-    "TT" : "L",
-    "OSL" : "s_L",
-    "TO" : "set_L",
+    "OSL" : "sticky_L",
     "DF" : "set_L",
+    "TO" : "set_L",
 
 }
 
@@ -875,14 +871,10 @@ const keyplus_mods = {
     "LSFT" : "S",
     "LALT" : "A",
     "LGUI" : "G",
-    "LCMD" : "G",
-    "LWIN" : "G",
     "RCTL" : "rC",
     "RSFT" : "rS",
     "RALT" : "rA",
     "RGUI" : "rG",
-    "RWIN" : "rG",
-    "RCMD" : "rG",
     // Multi Mod Keys
     "SGUI" : "SG",
     "SCMD" : "SG",
@@ -950,7 +942,12 @@ const legacy_mods = {
 
 const display_functions = {
 
-	'KC_GESC' : '`esc', 
+	'KC_GESC' : '`esc',
+	'KC_BTN1' : 'btn1',
+	'KC_BTN2' : 'btn2',
+	'KC_BTN3' : 'btn3',
+	'KC_BTN4' : 'btn4',
+	'KC_BTN5' : 'btn5',
 	'LCTL()' : 'C-', 
 	'LSFT()' : 'S-', 
 	'LALT()' : 'A-', 
@@ -980,6 +977,8 @@ const display_functions = {
 	'LCAG_T()' : 'Tap>CAG-', 
 	'ALL_T()' : 'Tap>HYPR-',
     'M()' : 'M()',
+
+    'MOD()' : 'Mod-Keys',
 }
 
 module.exports = {

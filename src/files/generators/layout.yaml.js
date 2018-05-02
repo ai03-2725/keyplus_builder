@@ -12,7 +12,6 @@ class KeyplusY extends Generator {
 		// Generate the keymaps.
 		let keymaps = '';
 		let explicit = '';
-		console.log(keyboard.keys)
 		for (let layer = 0; layer < C.KEYMAP_MAX_LAYERS; layer ++) {
 			let layerMap = '      [ # Layer '+String(layer)+'\n        [\n          ';
 			for (let row = 0; row < keyboard.rows; row ++) {
@@ -115,7 +114,7 @@ class KeyplusY extends Generator {
 								//}
 							}
 							else {
-								keycode = 'trns';
+								keycode = '____';
 							}
 						}
 					}

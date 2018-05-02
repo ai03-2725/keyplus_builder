@@ -81,12 +81,11 @@ class Main extends React.Component {
 					'rows': data['devices'][name]['scan_mode']['rows'],
 					'cols': data['devices'][name]['scan_mode']['cols'],
 					'matrix': data['devices'][name]['scan_mode']['matrix_map'],
-					'kle': data['devices'][name]['layout-kle'],
-					'layout': data['layouts'][layout_name]['layers'],
+					'kle': data['devices'][name]['studio_kle'],
+					'keymap': data['layouts'][layout_name]['layers'],
 				}
-				console.log(info)
 
-				// Build a new keyboard.
+				// Build a new keyboard
 				const keyboard = new Keyboard(state, info, true);
 				console.log(keyboard)
 
@@ -112,6 +111,7 @@ class Main extends React.Component {
 
 			// Parse the KLE data.
 			const keyboard = new Keyboard(state, json);
+			console.log(keyboard)
 
 			// Make sure the data is valid.
 			if (keyboard.keys.length == 0) {

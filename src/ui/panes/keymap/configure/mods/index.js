@@ -29,19 +29,21 @@ class Mods extends React.Component {
 				onChange={ v => (this.props.onChange && this.props.onChange(v ? (mods | 0b001000) : (mods & ~0b001000))) }>
 				GUI
 			</Toggle>
-			<Toggle
-				value={ mods & 0b010000 }
-				onChange={ v => (this.props.onChange && this.props.onChange(v ? (mods | 0b010000) : (mods & ~0b010000))) }>
-				HYPER
-			</Toggle>
-			<Toggle
-				value={ mods & 0b100000 }
-				onChange={ v => (this.props.onChange && this.props.onChange(v ? (mods | 0b100000) : (mods & ~0b100000))) }>
-				MEH
-			</Toggle>
 		</div>;
 	}
 
 }
 
 module.exports = Mods;
+/* 
+<Toggle
+	value={ mods & 0b010000 }
+	onChange={ v => (this.props.onChange && this.props.onChange(v ? (mods | 0b010000) : (mods & ~0b010000))) }>
+	HYPER
+</Toggle>
+<Toggle
+	value={ mods & 0b100000 }
+	onChange={ v => (this.props.onChange && this.props.onChange(v ? (mods | 0b100000) : (mods & ~0b100000))) }>
+	MEH
+</Toggle> 
+*/

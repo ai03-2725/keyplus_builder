@@ -37,6 +37,7 @@
 		"react-dom": "^15.4.1",
 		"superagent": "^3.3.1",
 		"uglifyify": "^3.0.4",
+		"underscore": "^1.9.0",
 		"watchify": "^3.7.0"
 	},
 	"devDependencies": {

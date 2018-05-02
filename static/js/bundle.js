@@ -26898,6 +26898,1698 @@ exports.cleanHeader = function(header, changesOrigin){
 };
 
 },{}],222:[function(require,module,exports){
+(function (global){
+//     Underscore.js 1.9.0
+//     http://underscorejs.org
+//     (c) 2009-2018 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+//     Underscore may be freely distributed under the MIT license.
+
+(function() {
+
+  // Baseline setup
+  // --------------
+
+  // Establish the root object, `window` (`self`) in the browser, `global`
+  // on the server, or `this` in some virtual machines. We use `self`
+  // instead of `window` for `WebWorker` support.
+  var root = typeof self == 'object' && self.self === self && self ||
+            typeof global == 'object' && global.global === global && global ||
+            this ||
+            {};
+
+  // Save the previous value of the `_` variable.
+  var previousUnderscore = root._;
+
+  // Save bytes in the minified (but not gzipped) version:
+  var ArrayProto = Array.prototype, ObjProto = Object.prototype;
+  var SymbolProto = typeof Symbol !== 'undefined' ? Symbol.prototype : null;
+
+  // Create quick reference variables for speed access to core prototypes.
+  var push = ArrayProto.push,
+      slice = ArrayProto.slice,
+      toString = ObjProto.toString,
+      hasOwnProperty = ObjProto.hasOwnProperty;
+
+  // All **ECMAScript 5** native function implementations that we hope to use
+  // are declared here.
+  var nativeIsArray = Array.isArray,
+      nativeKeys = Object.keys,
+      nativeCreate = Object.create;
+
+  // Naked function reference for surrogate-prototype-swapping.
+  var Ctor = function(){};
+
+  // Create a safe reference to the Underscore object for use below.
+  var _ = function(obj) {
+    if (obj instanceof _) return obj;
+    if (!(this instanceof _)) return new _(obj);
+    this._wrapped = obj;
+  };
+
+  // Export the Underscore object for **Node.js**, with
+  // backwards-compatibility for their old module API. If we're in
+  // the browser, add `_` as a global object.
+  // (`nodeType` is checked to ensure that `module`
+  // and `exports` are not HTML elements.)
+  if (typeof exports != 'undefined' && !exports.nodeType) {
+    if (typeof module != 'undefined' && !module.nodeType && module.exports) {
+      exports = module.exports = _;
+    }
+    exports._ = _;
+  } else {
+    root._ = _;
+  }
+
+  // Current version.
+  _.VERSION = '1.9.0';
+
+  // Internal function that returns an efficient (for current engines) version
+  // of the passed-in callback, to be repeatedly applied in other Underscore
+  // functions.
+  var optimizeCb = function(func, context, argCount) {
+    if (context === void 0) return func;
+    switch (argCount == null ? 3 : argCount) {
+      case 1: return function(value) {
+        return func.call(context, value);
+      };
+      // The 2-argument case is omitted because we’re not using it.
+      case 3: return function(value, index, collection) {
+        return func.call(context, value, index, collection);
+      };
+      case 4: return function(accumulator, value, index, collection) {
+        return func.call(context, accumulator, value, index, collection);
+      };
+    }
+    return function() {
+      return func.apply(context, arguments);
+    };
+  };
+
+  var builtinIteratee;
+
+  // An internal function to generate callbacks that can be applied to each
+  // element in a collection, returning the desired result — either `identity`,
+  // an arbitrary callback, a property matcher, or a property accessor.
+  var cb = function(value, context, argCount) {
+    if (_.iteratee !== builtinIteratee) return _.iteratee(value, context);
+    if (value == null) return _.identity;
+    if (_.isFunction(value)) return optimizeCb(value, context, argCount);
+    if (_.isObject(value) && !_.isArray(value)) return _.matcher(value);
+    return _.property(value);
+  };
+
+  // External wrapper for our callback generator. Users may customize
+  // `_.iteratee` if they want additional predicate/iteratee shorthand styles.
+  // This abstraction hides the internal-only argCount argument.
+  _.iteratee = builtinIteratee = function(value, context) {
+    return cb(value, context, Infinity);
+  };
+
+  // Some functions take a variable number of arguments, or a few expected
+  // arguments at the beginning and then a variable number of values to operate
+  // on. This helper accumulates all remaining arguments past the function’s
+  // argument length (or an explicit `startIndex`), into an array that becomes
+  // the last argument. Similar to ES6’s "rest parameter".
+  var restArguments = function(func, startIndex) {
+    startIndex = startIndex == null ? func.length - 1 : +startIndex;
+    return function() {
+      var length = Math.max(arguments.length - startIndex, 0),
+          rest = Array(length),
+          index = 0;
+      for (; index < length; index++) {
+        rest[index] = arguments[index + startIndex];
+      }
+      switch (startIndex) {
+        case 0: return func.call(this, rest);
+        case 1: return func.call(this, arguments[0], rest);
+        case 2: return func.call(this, arguments[0], arguments[1], rest);
+      }
+      var args = Array(startIndex + 1);
+      for (index = 0; index < startIndex; index++) {
+        args[index] = arguments[index];
+      }
+      args[startIndex] = rest;
+      return func.apply(this, args);
+    };
+  };
+
+  // An internal function for creating a new object that inherits from another.
+  var baseCreate = function(prototype) {
+    if (!_.isObject(prototype)) return {};
+    if (nativeCreate) return nativeCreate(prototype);
+    Ctor.prototype = prototype;
+    var result = new Ctor;
+    Ctor.prototype = null;
+    return result;
+  };
+
+  var shallowProperty = function(key) {
+    return function(obj) {
+      return obj == null ? void 0 : obj[key];
+    };
+  };
+
+  var deepGet = function(obj, path) {
+    var length = path.length;
+    for (var i = 0; i < length; i++) {
+      if (obj == null) return void 0;
+      obj = obj[path[i]];
+    }
+    return length ? obj : void 0;
+  };
+
+  // Helper for collection methods to determine whether a collection
+  // should be iterated as an array or as an object.
+  // Related: http://people.mozilla.org/~jorendorff/es6-draft.html#sec-tolength
+  // Avoids a very nasty iOS 8 JIT bug on ARM-64. #2094
+  var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
+  var getLength = shallowProperty('length');
+  var isArrayLike = function(collection) {
+    var length = getLength(collection);
+    return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
+  };
+
+  // Collection Functions
+  // --------------------
+
+  // The cornerstone, an `each` implementation, aka `forEach`.
+  // Handles raw objects in addition to array-likes. Treats all
+  // sparse array-likes as if they were dense.
+  _.each = _.forEach = function(obj, iteratee, context) {
+    iteratee = optimizeCb(iteratee, context);
+    var i, length;
+    if (isArrayLike(obj)) {
+      for (i = 0, length = obj.length; i < length; i++) {
+        iteratee(obj[i], i, obj);
+      }
+    } else {
+      var keys = _.keys(obj);
+      for (i = 0, length = keys.length; i < length; i++) {
+        iteratee(obj[keys[i]], keys[i], obj);
+      }
+    }
+    return obj;
+  };
+
+  // Return the results of applying the iteratee to each element.
+  _.map = _.collect = function(obj, iteratee, context) {
+    iteratee = cb(iteratee, context);
+    var keys = !isArrayLike(obj) && _.keys(obj),
+        length = (keys || obj).length,
+        results = Array(length);
+    for (var index = 0; index < length; index++) {
+      var currentKey = keys ? keys[index] : index;
+      results[index] = iteratee(obj[currentKey], currentKey, obj);
+    }
+    return results;
+  };
+
+  // Create a reducing function iterating left or right.
+  var createReduce = function(dir) {
+    // Wrap code that reassigns argument variables in a separate function than
+    // the one that accesses `arguments.length` to avoid a perf hit. (#1991)
+    var reducer = function(obj, iteratee, memo, initial) {
+      var keys = !isArrayLike(obj) && _.keys(obj),
+          length = (keys || obj).length,
+          index = dir > 0 ? 0 : length - 1;
+      if (!initial) {
+        memo = obj[keys ? keys[index] : index];
+        index += dir;
+      }
+      for (; index >= 0 && index < length; index += dir) {
+        var currentKey = keys ? keys[index] : index;
+        memo = iteratee(memo, obj[currentKey], currentKey, obj);
+      }
+      return memo;
+    };
+
+    return function(obj, iteratee, memo, context) {
+      var initial = arguments.length >= 3;
+      return reducer(obj, optimizeCb(iteratee, context, 4), memo, initial);
+    };
+  };
+
+  // **Reduce** builds up a single result from a list of values, aka `inject`,
+  // or `foldl`.
+  _.reduce = _.foldl = _.inject = createReduce(1);
+
+  // The right-associative version of reduce, also known as `foldr`.
+  _.reduceRight = _.foldr = createReduce(-1);
+
+  // Return the first value which passes a truth test. Aliased as `detect`.
+  _.find = _.detect = function(obj, predicate, context) {
+    var keyFinder = isArrayLike(obj) ? _.findIndex : _.findKey;
+    var key = keyFinder(obj, predicate, context);
+    if (key !== void 0 && key !== -1) return obj[key];
+  };
+
+  // Return all the elements that pass a truth test.
+  // Aliased as `select`.
+  _.filter = _.select = function(obj, predicate, context) {
+    var results = [];
+    predicate = cb(predicate, context);
+    _.each(obj, function(value, index, list) {
+      if (predicate(value, index, list)) results.push(value);
+    });
+    return results;
+  };
+
+  // Return all the elements for which a truth test fails.
+  _.reject = function(obj, predicate, context) {
+    return _.filter(obj, _.negate(cb(predicate)), context);
+  };
+
+  // Determine whether all of the elements match a truth test.
+  // Aliased as `all`.
+  _.every = _.all = function(obj, predicate, context) {
+    predicate = cb(predicate, context);
+    var keys = !isArrayLike(obj) && _.keys(obj),
+        length = (keys || obj).length;
+    for (var index = 0; index < length; index++) {
+      var currentKey = keys ? keys[index] : index;
+      if (!predicate(obj[currentKey], currentKey, obj)) return false;
+    }
+    return true;
+  };
+
+  // Determine if at least one element in the object matches a truth test.
+  // Aliased as `any`.
+  _.some = _.any = function(obj, predicate, context) {
+    predicate = cb(predicate, context);
+    var keys = !isArrayLike(obj) && _.keys(obj),
+        length = (keys || obj).length;
+    for (var index = 0; index < length; index++) {
+      var currentKey = keys ? keys[index] : index;
+      if (predicate(obj[currentKey], currentKey, obj)) return true;
+    }
+    return false;
+  };
+
+  // Determine if the array or object contains a given item (using `===`).
+  // Aliased as `includes` and `include`.
+  _.contains = _.includes = _.include = function(obj, item, fromIndex, guard) {
+    if (!isArrayLike(obj)) obj = _.values(obj);
+    if (typeof fromIndex != 'number' || guard) fromIndex = 0;
+    return _.indexOf(obj, item, fromIndex) >= 0;
+  };
+
+  // Invoke a method (with arguments) on every item in a collection.
+  _.invoke = restArguments(function(obj, path, args) {
+    var contextPath, func;
+    if (_.isFunction(path)) {
+      func = path;
+    } else if (_.isArray(path)) {
+      contextPath = path.slice(0, -1);
+      path = path[path.length - 1];
+    }
+    return _.map(obj, function(context) {
+      var method = func;
+      if (!method) {
+        if (contextPath && contextPath.length) {
+          context = deepGet(context, contextPath);
+        }
+        if (context == null) return void 0;
+        method = context[path];
+      }
+      return method == null ? method : method.apply(context, args);
+    });
+  });
+
+  // Convenience version of a common use case of `map`: fetching a property.
+  _.pluck = function(obj, key) {
+    return _.map(obj, _.property(key));
+  };
+
+  // Convenience version of a common use case of `filter`: selecting only objects
+  // containing specific `key:value` pairs.
+  _.where = function(obj, attrs) {
+    return _.filter(obj, _.matcher(attrs));
+  };
+
+  // Convenience version of a common use case of `find`: getting the first object
+  // containing specific `key:value` pairs.
+  _.findWhere = function(obj, attrs) {
+    return _.find(obj, _.matcher(attrs));
+  };
+
+  // Return the maximum element (or element-based computation).
+  _.max = function(obj, iteratee, context) {
+    var result = -Infinity, lastComputed = -Infinity,
+        value, computed;
+    if (iteratee == null || typeof iteratee == 'number' && typeof obj[0] != 'object' && obj != null) {
+      obj = isArrayLike(obj) ? obj : _.values(obj);
+      for (var i = 0, length = obj.length; i < length; i++) {
+        value = obj[i];
+        if (value != null && value > result) {
+          result = value;
+        }
+      }
+    } else {
+      iteratee = cb(iteratee, context);
+      _.each(obj, function(v, index, list) {
+        computed = iteratee(v, index, list);
+        if (computed > lastComputed || computed === -Infinity && result === -Infinity) {
+          result = v;
+          lastComputed = computed;
+        }
+      });
+    }
+    return result;
+  };
+
+  // Return the minimum element (or element-based computation).
+  _.min = function(obj, iteratee, context) {
+    var result = Infinity, lastComputed = Infinity,
+        value, computed;
+    if (iteratee == null || typeof iteratee == 'number' && typeof obj[0] != 'object' && obj != null) {
+      obj = isArrayLike(obj) ? obj : _.values(obj);
+      for (var i = 0, length = obj.length; i < length; i++) {
+        value = obj[i];
+        if (value != null && value < result) {
+          result = value;
+        }
+      }
+    } else {
+      iteratee = cb(iteratee, context);
+      _.each(obj, function(v, index, list) {
+        computed = iteratee(v, index, list);
+        if (computed < lastComputed || computed === Infinity && result === Infinity) {
+          result = v;
+          lastComputed = computed;
+        }
+      });
+    }
+    return result;
+  };
+
+  // Shuffle a collection.
+  _.shuffle = function(obj) {
+    return _.sample(obj, Infinity);
+  };
+
+  // Sample **n** random values from a collection using the modern version of the
+  // [Fisher-Yates shuffle](http://en.wikipedia.org/wiki/Fisher–Yates_shuffle).
+  // If **n** is not specified, returns a single random element.
+  // The internal `guard` argument allows it to work with `map`.
+  _.sample = function(obj, n, guard) {
+    if (n == null || guard) {
+      if (!isArrayLike(obj)) obj = _.values(obj);
+      return obj[_.random(obj.length - 1)];
+    }
+    var sample = isArrayLike(obj) ? _.clone(obj) : _.values(obj);
+    var length = getLength(sample);
+    n = Math.max(Math.min(n, length), 0);
+    var last = length - 1;
+    for (var index = 0; index < n; index++) {
+      var rand = _.random(index, last);
+      var temp = sample[index];
+      sample[index] = sample[rand];
+      sample[rand] = temp;
+    }
+    return sample.slice(0, n);
+  };
+
+  // Sort the object's values by a criterion produced by an iteratee.
+  _.sortBy = function(obj, iteratee, context) {
+    var index = 0;
+    iteratee = cb(iteratee, context);
+    return _.pluck(_.map(obj, function(value, key, list) {
+      return {
+        value: value,
+        index: index++,
+        criteria: iteratee(value, key, list)
+      };
+    }).sort(function(left, right) {
+      var a = left.criteria;
+      var b = right.criteria;
+      if (a !== b) {
+        if (a > b || a === void 0) return 1;
+        if (a < b || b === void 0) return -1;
+      }
+      return left.index - right.index;
+    }), 'value');
+  };
+
+  // An internal function used for aggregate "group by" operations.
+  var group = function(behavior, partition) {
+    return function(obj, iteratee, context) {
+      var result = partition ? [[], []] : {};
+      iteratee = cb(iteratee, context);
+      _.each(obj, function(value, index) {
+        var key = iteratee(value, index, obj);
+        behavior(result, value, key);
+      });
+      return result;
+    };
+  };
+
+  // Groups the object's values by a criterion. Pass either a string attribute
+  // to group by, or a function that returns the criterion.
+  _.groupBy = group(function(result, value, key) {
+    if (_.has(result, key)) result[key].push(value); else result[key] = [value];
+  });
+
+  // Indexes the object's values by a criterion, similar to `groupBy`, but for
+  // when you know that your index values will be unique.
+  _.indexBy = group(function(result, value, key) {
+    result[key] = value;
+  });
+
+  // Counts instances of an object that group by a certain criterion. Pass
+  // either a string attribute to count by, or a function that returns the
+  // criterion.
+  _.countBy = group(function(result, value, key) {
+    if (_.has(result, key)) result[key]++; else result[key] = 1;
+  });
+
+  var reStrSymbol = /[^\ud800-\udfff]|[\ud800-\udbff][\udc00-\udfff]|[\ud800-\udfff]/g;
+  // Safely create a real, live array from anything iterable.
+  _.toArray = function(obj) {
+    if (!obj) return [];
+    if (_.isArray(obj)) return slice.call(obj);
+    if (_.isString(obj)) {
+      // Keep surrogate pair characters together
+      return obj.match(reStrSymbol);
+    }
+    if (isArrayLike(obj)) return _.map(obj, _.identity);
+    return _.values(obj);
+  };
+
+  // Return the number of elements in an object.
+  _.size = function(obj) {
+    if (obj == null) return 0;
+    return isArrayLike(obj) ? obj.length : _.keys(obj).length;
+  };
+
+  // Split a collection into two arrays: one whose elements all satisfy the given
+  // predicate, and one whose elements all do not satisfy the predicate.
+  _.partition = group(function(result, value, pass) {
+    result[pass ? 0 : 1].push(value);
+  }, true);
+
+  // Array Functions
+  // ---------------
+
+  // Get the first element of an array. Passing **n** will return the first N
+  // values in the array. Aliased as `head` and `take`. The **guard** check
+  // allows it to work with `_.map`.
+  _.first = _.head = _.take = function(array, n, guard) {
+    if (array == null || array.length < 1) return void 0;
+    if (n == null || guard) return array[0];
+    return _.initial(array, array.length - n);
+  };
+
+  // Returns everything but the last entry of the array. Especially useful on
+  // the arguments object. Passing **n** will return all the values in
+  // the array, excluding the last N.
+  _.initial = function(array, n, guard) {
+    return slice.call(array, 0, Math.max(0, array.length - (n == null || guard ? 1 : n)));
+  };
+
+  // Get the last element of an array. Passing **n** will return the last N
+  // values in the array.
+  _.last = function(array, n, guard) {
+    if (array == null || array.length < 1) return void 0;
+    if (n == null || guard) return array[array.length - 1];
+    return _.rest(array, Math.max(0, array.length - n));
+  };
+
+  // Returns everything but the first entry of the array. Aliased as `tail` and `drop`.
+  // Especially useful on the arguments object. Passing an **n** will return
+  // the rest N values in the array.
+  _.rest = _.tail = _.drop = function(array, n, guard) {
+    return slice.call(array, n == null || guard ? 1 : n);
+  };
+
+  // Trim out all falsy values from an array.
+  _.compact = function(array) {
+    return _.filter(array, Boolean);
+  };
+
+  // Internal implementation of a recursive `flatten` function.
+  var flatten = function(input, shallow, strict, output) {
+    output = output || [];
+    var idx = output.length;
+    for (var i = 0, length = getLength(input); i < length; i++) {
+      var value = input[i];
+      if (isArrayLike(value) && (_.isArray(value) || _.isArguments(value))) {
+        // Flatten current level of array or arguments object.
+        if (shallow) {
+          var j = 0, len = value.length;
+          while (j < len) output[idx++] = value[j++];
+        } else {
+          flatten(value, shallow, strict, output);
+          idx = output.length;
+        }
+      } else if (!strict) {
+        output[idx++] = value;
+      }
+    }
+    return output;
+  };
+
+  // Flatten out an array, either recursively (by default), or just one level.
+  _.flatten = function(array, shallow) {
+    return flatten(array, shallow, false);
+  };
+
+  // Return a version of the array that does not contain the specified value(s).
+  _.without = restArguments(function(array, otherArrays) {
+    return _.difference(array, otherArrays);
+  });
+
+  // Produce a duplicate-free version of the array. If the array has already
+  // been sorted, you have the option of using a faster algorithm.
+  // The faster algorithm will not work with an iteratee if the iteratee
+  // is not a one-to-one function, so providing an iteratee will disable
+  // the faster algorithm.
+  // Aliased as `unique`.
+  _.uniq = _.unique = function(array, isSorted, iteratee, context) {
+    if (!_.isBoolean(isSorted)) {
+      context = iteratee;
+      iteratee = isSorted;
+      isSorted = false;
+    }
+    if (iteratee != null) iteratee = cb(iteratee, context);
+    var result = [];
+    var seen = [];
+    for (var i = 0, length = getLength(array); i < length; i++) {
+      var value = array[i],
+          computed = iteratee ? iteratee(value, i, array) : value;
+      if (isSorted && !iteratee) {
+        if (!i || seen !== computed) result.push(value);
+        seen = computed;
+      } else if (iteratee) {
+        if (!_.contains(seen, computed)) {
+          seen.push(computed);
+          result.push(value);
+        }
+      } else if (!_.contains(result, value)) {
+        result.push(value);
+      }
+    }
+    return result;
+  };
+
+  // Produce an array that contains the union: each distinct element from all of
+  // the passed-in arrays.
+  _.union = restArguments(function(arrays) {
+    return _.uniq(flatten(arrays, true, true));
+  });
+
+  // Produce an array that contains every item shared between all the
+  // passed-in arrays.
+  _.intersection = function(array) {
+    var result = [];
+    var argsLength = arguments.length;
+    for (var i = 0, length = getLength(array); i < length; i++) {
+      var item = array[i];
+      if (_.contains(result, item)) continue;
+      var j;
+      for (j = 1; j < argsLength; j++) {
+        if (!_.contains(arguments[j], item)) break;
+      }
+      if (j === argsLength) result.push(item);
+    }
+    return result;
+  };
+
+  // Take the difference between one array and a number of other arrays.
+  // Only the elements present in just the first array will remain.
+  _.difference = restArguments(function(array, rest) {
+    rest = flatten(rest, true, true);
+    return _.filter(array, function(value){
+      return !_.contains(rest, value);
+    });
+  });
+
+  // Complement of _.zip. Unzip accepts an array of arrays and groups
+  // each array's elements on shared indices.
+  _.unzip = function(array) {
+    var length = array && _.max(array, getLength).length || 0;
+    var result = Array(length);
+
+    for (var index = 0; index < length; index++) {
+      result[index] = _.pluck(array, index);
+    }
+    return result;
+  };
+
+  // Zip together multiple lists into a single array -- elements that share
+  // an index go together.
+  _.zip = restArguments(_.unzip);
+
+  // Converts lists into objects. Pass either a single array of `[key, value]`
+  // pairs, or two parallel arrays of the same length -- one of keys, and one of
+  // the corresponding values. Passing by pairs is the reverse of _.pairs.
+  _.object = function(list, values) {
+    var result = {};
+    for (var i = 0, length = getLength(list); i < length; i++) {
+      if (values) {
+        result[list[i]] = values[i];
+      } else {
+        result[list[i][0]] = list[i][1];
+      }
+    }
+    return result;
+  };
+
+  // Generator function to create the findIndex and findLastIndex functions.
+  var createPredicateIndexFinder = function(dir) {
+    return function(array, predicate, context) {
+      predicate = cb(predicate, context);
+      var length = getLength(array);
+      var index = dir > 0 ? 0 : length - 1;
+      for (; index >= 0 && index < length; index += dir) {
+        if (predicate(array[index], index, array)) return index;
+      }
+      return -1;
+    };
+  };
+
+  // Returns the first index on an array-like that passes a predicate test.
+  _.findIndex = createPredicateIndexFinder(1);
+  _.findLastIndex = createPredicateIndexFinder(-1);
+
+  // Use a comparator function to figure out the smallest index at which
+  // an object should be inserted so as to maintain order. Uses binary search.
+  _.sortedIndex = function(array, obj, iteratee, context) {
+    iteratee = cb(iteratee, context, 1);
+    var value = iteratee(obj);
+    var low = 0, high = getLength(array);
+    while (low < high) {
+      var mid = Math.floor((low + high) / 2);
+      if (iteratee(array[mid]) < value) low = mid + 1; else high = mid;
+    }
+    return low;
+  };
+
+  // Generator function to create the indexOf and lastIndexOf functions.
+  var createIndexFinder = function(dir, predicateFind, sortedIndex) {
+    return function(array, item, idx) {
+      var i = 0, length = getLength(array);
+      if (typeof idx == 'number') {
+        if (dir > 0) {
+          i = idx >= 0 ? idx : Math.max(idx + length, i);
+        } else {
+          length = idx >= 0 ? Math.min(idx + 1, length) : idx + length + 1;
+        }
+      } else if (sortedIndex && idx && length) {
+        idx = sortedIndex(array, item);
+        return array[idx] === item ? idx : -1;
+      }
+      if (item !== item) {
+        idx = predicateFind(slice.call(array, i, length), _.isNaN);
+        return idx >= 0 ? idx + i : -1;
+      }
+      for (idx = dir > 0 ? i : length - 1; idx >= 0 && idx < length; idx += dir) {
+        if (array[idx] === item) return idx;
+      }
+      return -1;
+    };
+  };
+
+  // Return the position of the first occurrence of an item in an array,
+  // or -1 if the item is not included in the array.
+  // If the array is large and already in sort order, pass `true`
+  // for **isSorted** to use binary search.
+  _.indexOf = createIndexFinder(1, _.findIndex, _.sortedIndex);
+  _.lastIndexOf = createIndexFinder(-1, _.findLastIndex);
+
+  // Generate an integer Array containing an arithmetic progression. A port of
+  // the native Python `range()` function. See
+  // [the Python documentation](http://docs.python.org/library/functions.html#range).
+  _.range = function(start, stop, step) {
+    if (stop == null) {
+      stop = start || 0;
+      start = 0;
+    }
+    if (!step) {
+      step = stop < start ? -1 : 1;
+    }
+
+    var length = Math.max(Math.ceil((stop - start) / step), 0);
+    var range = Array(length);
+
+    for (var idx = 0; idx < length; idx++, start += step) {
+      range[idx] = start;
+    }
+
+    return range;
+  };
+
+  // Chunk a single array into multiple arrays, each containing `count` or fewer
+  // items.
+  _.chunk = function(array, count) {
+    if (count == null || count < 1) return [];
+    var result = [];
+    var i = 0, length = array.length;
+    while (i < length) {
+      result.push(slice.call(array, i, i += count));
+    }
+    return result;
+  };
+
+  // Function (ahem) Functions
+  // ------------------
+
+  // Determines whether to execute a function as a constructor
+  // or a normal function with the provided arguments.
+  var executeBound = function(sourceFunc, boundFunc, context, callingContext, args) {
+    if (!(callingContext instanceof boundFunc)) return sourceFunc.apply(context, args);
+    var self = baseCreate(sourceFunc.prototype);
+    var result = sourceFunc.apply(self, args);
+    if (_.isObject(result)) return result;
+    return self;
+  };
+
+  // Create a function bound to a given object (assigning `this`, and arguments,
+  // optionally). Delegates to **ECMAScript 5**'s native `Function.bind` if
+  // available.
+  _.bind = restArguments(function(func, context, args) {
+    if (!_.isFunction(func)) throw new TypeError('Bind must be called on a function');
+    var bound = restArguments(function(callArgs) {
+      return executeBound(func, bound, context, this, args.concat(callArgs));
+    });
+    return bound;
+  });
+
+  // Partially apply a function by creating a version that has had some of its
+  // arguments pre-filled, without changing its dynamic `this` context. _ acts
+  // as a placeholder by default, allowing any combination of arguments to be
+  // pre-filled. Set `_.partial.placeholder` for a custom placeholder argument.
+  _.partial = restArguments(function(func, boundArgs) {
+    var placeholder = _.partial.placeholder;
+    var bound = function() {
+      var position = 0, length = boundArgs.length;
+      var args = Array(length);
+      for (var i = 0; i < length; i++) {
+        args[i] = boundArgs[i] === placeholder ? arguments[position++] : boundArgs[i];
+      }
+      while (position < arguments.length) args.push(arguments[position++]);
+      return executeBound(func, bound, this, this, args);
+    };
+    return bound;
+  });
+
+  _.partial.placeholder = _;
+
+  // Bind a number of an object's methods to that object. Remaining arguments
+  // are the method names to be bound. Useful for ensuring that all callbacks
+  // defined on an object belong to it.
+  _.bindAll = restArguments(function(obj, keys) {
+    keys = flatten(keys, false, false);
+    var index = keys.length;
+    if (index < 1) throw new Error('bindAll must be passed function names');
+    while (index--) {
+      var key = keys[index];
+      obj[key] = _.bind(obj[key], obj);
+    }
+  });
+
+  // Memoize an expensive function by storing its results.
+  _.memoize = function(func, hasher) {
+    var memoize = function(key) {
+      var cache = memoize.cache;
+      var address = '' + (hasher ? hasher.apply(this, arguments) : key);
+      if (!_.has(cache, address)) cache[address] = func.apply(this, arguments);
+      return cache[address];
+    };
+    memoize.cache = {};
+    return memoize;
+  };
+
+  // Delays a function for the given number of milliseconds, and then calls
+  // it with the arguments supplied.
+  _.delay = restArguments(function(func, wait, args) {
+    return setTimeout(function() {
+      return func.apply(null, args);
+    }, wait);
+  });
+
+  // Defers a function, scheduling it to run after the current call stack has
+  // cleared.
+  _.defer = _.partial(_.delay, _, 1);
+
+  // Returns a function, that, when invoked, will only be triggered at most once
+  // during a given window of time. Normally, the throttled function will run
+  // as much as it can, without ever going more than once per `wait` duration;
+  // but if you'd like to disable the execution on the leading edge, pass
+  // `{leading: false}`. To disable execution on the trailing edge, ditto.
+  _.throttle = function(func, wait, options) {
+    var timeout, context, args, result;
+    var previous = 0;
+    if (!options) options = {};
+
+    var later = function() {
+      previous = options.leading === false ? 0 : _.now();
+      timeout = null;
+      result = func.apply(context, args);
+      if (!timeout) context = args = null;
+    };
+
+    var throttled = function() {
+      var now = _.now();
+      if (!previous && options.leading === false) previous = now;
+      var remaining = wait - (now - previous);
+      context = this;
+      args = arguments;
+      if (remaining <= 0 || remaining > wait) {
+        if (timeout) {
+          clearTimeout(timeout);
+          timeout = null;
+        }
+        previous = now;
+        result = func.apply(context, args);
+        if (!timeout) context = args = null;
+      } else if (!timeout && options.trailing !== false) {
+        timeout = setTimeout(later, remaining);
+      }
+      return result;
+    };
+
+    throttled.cancel = function() {
+      clearTimeout(timeout);
+      previous = 0;
+      timeout = context = args = null;
+    };
+
+    return throttled;
+  };
+
+  // Returns a function, that, as long as it continues to be invoked, will not
+  // be triggered. The function will be called after it stops being called for
+  // N milliseconds. If `immediate` is passed, trigger the function on the
+  // leading edge, instead of the trailing.
+  _.debounce = function(func, wait, immediate) {
+    var timeout, result;
+
+    var later = function(context, args) {
+      timeout = null;
+      if (args) result = func.apply(context, args);
+    };
+
+    var debounced = restArguments(function(args) {
+      if (timeout) clearTimeout(timeout);
+      if (immediate) {
+        var callNow = !timeout;
+        timeout = setTimeout(later, wait);
+        if (callNow) result = func.apply(this, args);
+      } else {
+        timeout = _.delay(later, wait, this, args);
+      }
+
+      return result;
+    });
+
+    debounced.cancel = function() {
+      clearTimeout(timeout);
+      timeout = null;
+    };
+
+    return debounced;
+  };
+
+  // Returns the first function passed as an argument to the second,
+  // allowing you to adjust arguments, run code before and after, and
+  // conditionally execute the original function.
+  _.wrap = function(func, wrapper) {
+    return _.partial(wrapper, func);
+  };
+
+  // Returns a negated version of the passed-in predicate.
+  _.negate = function(predicate) {
+    return function() {
+      return !predicate.apply(this, arguments);
+    };
+  };
+
+  // Returns a function that is the composition of a list of functions, each
+  // consuming the return value of the function that follows.
+  _.compose = function() {
+    var args = arguments;
+    var start = args.length - 1;
+    return function() {
+      var i = start;
+      var result = args[start].apply(this, arguments);
+      while (i--) result = args[i].call(this, result);
+      return result;
+    };
+  };
+
+  // Returns a function that will only be executed on and after the Nth call.
+  _.after = function(times, func) {
+    return function() {
+      if (--times < 1) {
+        return func.apply(this, arguments);
+      }
+    };
+  };
+
+  // Returns a function that will only be executed up to (but not including) the Nth call.
+  _.before = function(times, func) {
+    var memo;
+    return function() {
+      if (--times > 0) {
+        memo = func.apply(this, arguments);
+      }
+      if (times <= 1) func = null;
+      return memo;
+    };
+  };
+
+  // Returns a function that will be executed at most one time, no matter how
+  // often you call it. Useful for lazy initialization.
+  _.once = _.partial(_.before, 2);
+
+  _.restArguments = restArguments;
+
+  // Object Functions
+  // ----------------
+
+  // Keys in IE < 9 that won't be iterated by `for key in ...` and thus missed.
+  var hasEnumBug = !{toString: null}.propertyIsEnumerable('toString');
+  var nonEnumerableProps = ['valueOf', 'isPrototypeOf', 'toString',
+    'propertyIsEnumerable', 'hasOwnProperty', 'toLocaleString'];
+
+  var collectNonEnumProps = function(obj, keys) {
+    var nonEnumIdx = nonEnumerableProps.length;
+    var constructor = obj.constructor;
+    var proto = _.isFunction(constructor) && constructor.prototype || ObjProto;
+
+    // Constructor is a special case.
+    var prop = 'constructor';
+    if (_.has(obj, prop) && !_.contains(keys, prop)) keys.push(prop);
+
+    while (nonEnumIdx--) {
+      prop = nonEnumerableProps[nonEnumIdx];
+      if (prop in obj && obj[prop] !== proto[prop] && !_.contains(keys, prop)) {
+        keys.push(prop);
+      }
+    }
+  };
+
+  // Retrieve the names of an object's own properties.
+  // Delegates to **ECMAScript 5**'s native `Object.keys`.
+  _.keys = function(obj) {
+    if (!_.isObject(obj)) return [];
+    if (nativeKeys) return nativeKeys(obj);
+    var keys = [];
+    for (var key in obj) if (_.has(obj, key)) keys.push(key);
+    // Ahem, IE < 9.
+    if (hasEnumBug) collectNonEnumProps(obj, keys);
+    return keys;
+  };
+
+  // Retrieve all the property names of an object.
+  _.allKeys = function(obj) {
+    if (!_.isObject(obj)) return [];
+    var keys = [];
+    for (var key in obj) keys.push(key);
+    // Ahem, IE < 9.
+    if (hasEnumBug) collectNonEnumProps(obj, keys);
+    return keys;
+  };
+
+  // Retrieve the values of an object's properties.
+  _.values = function(obj) {
+    var keys = _.keys(obj);
+    var length = keys.length;
+    var values = Array(length);
+    for (var i = 0; i < length; i++) {
+      values[i] = obj[keys[i]];
+    }
+    return values;
+  };
+
+  // Returns the results of applying the iteratee to each element of the object.
+  // In contrast to _.map it returns an object.
+  _.mapObject = function(obj, iteratee, context) {
+    iteratee = cb(iteratee, context);
+    var keys = _.keys(obj),
+        length = keys.length,
+        results = {};
+    for (var index = 0; index < length; index++) {
+      var currentKey = keys[index];
+      results[currentKey] = iteratee(obj[currentKey], currentKey, obj);
+    }
+    return results;
+  };
+
+  // Convert an object into a list of `[key, value]` pairs.
+  // The opposite of _.object.
+  _.pairs = function(obj) {
+    var keys = _.keys(obj);
+    var length = keys.length;
+    var pairs = Array(length);
+    for (var i = 0; i < length; i++) {
+      pairs[i] = [keys[i], obj[keys[i]]];
+    }
+    return pairs;
+  };
+
+  // Invert the keys and values of an object. The values must be serializable.
+  _.invert = function(obj) {
+    var result = {};
+    var keys = _.keys(obj);
+    for (var i = 0, length = keys.length; i < length; i++) {
+      result[obj[keys[i]]] = keys[i];
+    }
+    return result;
+  };
+
+  // Return a sorted list of the function names available on the object.
+  // Aliased as `methods`.
+  _.functions = _.methods = function(obj) {
+    var names = [];
+    for (var key in obj) {
+      if (_.isFunction(obj[key])) names.push(key);
+    }
+    return names.sort();
+  };
+
+  // An internal function for creating assigner functions.
+  var createAssigner = function(keysFunc, defaults) {
+    return function(obj) {
+      var length = arguments.length;
+      if (defaults) obj = Object(obj);
+      if (length < 2 || obj == null) return obj;
+      for (var index = 1; index < length; index++) {
+        var source = arguments[index],
+            keys = keysFunc(source),
+            l = keys.length;
+        for (var i = 0; i < l; i++) {
+          var key = keys[i];
+          if (!defaults || obj[key] === void 0) obj[key] = source[key];
+        }
+      }
+      return obj;
+    };
+  };
+
+  // Extend a given object with all the properties in passed-in object(s).
+  _.extend = createAssigner(_.allKeys);
+
+  // Assigns a given object with all the own properties in the passed-in object(s).
+  // (https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign)
+  _.extendOwn = _.assign = createAssigner(_.keys);
+
+  // Returns the first key on an object that passes a predicate test.
+  _.findKey = function(obj, predicate, context) {
+    predicate = cb(predicate, context);
+    var keys = _.keys(obj), key;
+    for (var i = 0, length = keys.length; i < length; i++) {
+      key = keys[i];
+      if (predicate(obj[key], key, obj)) return key;
+    }
+  };
+
+  // Internal pick helper function to determine if `obj` has key `key`.
+  var keyInObj = function(value, key, obj) {
+    return key in obj;
+  };
+
+  // Return a copy of the object only containing the whitelisted properties.
+  _.pick = restArguments(function(obj, keys) {
+    var result = {}, iteratee = keys[0];
+    if (obj == null) return result;
+    if (_.isFunction(iteratee)) {
+      if (keys.length > 1) iteratee = optimizeCb(iteratee, keys[1]);
+      keys = _.allKeys(obj);
+    } else {
+      iteratee = keyInObj;
+      keys = flatten(keys, false, false);
+      obj = Object(obj);
+    }
+    for (var i = 0, length = keys.length; i < length; i++) {
+      var key = keys[i];
+      var value = obj[key];
+      if (iteratee(value, key, obj)) result[key] = value;
+    }
+    return result;
+  });
+
+  // Return a copy of the object without the blacklisted properties.
+  _.omit = restArguments(function(obj, keys) {
+    var iteratee = keys[0], context;
+    if (_.isFunction(iteratee)) {
+      iteratee = _.negate(iteratee);
+      if (keys.length > 1) context = keys[1];
+    } else {
+      keys = _.map(flatten(keys, false, false), String);
+      iteratee = function(value, key) {
+        return !_.contains(keys, key);
+      };
+    }
+    return _.pick(obj, iteratee, context);
+  });
+
+  // Fill in a given object with default properties.
+  _.defaults = createAssigner(_.allKeys, true);
+
+  // Creates an object that inherits from the given prototype object.
+  // If additional properties are provided then they will be added to the
+  // created object.
+  _.create = function(prototype, props) {
+    var result = baseCreate(prototype);
+    if (props) _.extendOwn(result, props);
+    return result;
+  };
+
+  // Create a (shallow-cloned) duplicate of an object.
+  _.clone = function(obj) {
+    if (!_.isObject(obj)) return obj;
+    return _.isArray(obj) ? obj.slice() : _.extend({}, obj);
+  };
+
+  // Invokes interceptor with the obj, and then returns obj.
+  // The primary purpose of this method is to "tap into" a method chain, in
+  // order to perform operations on intermediate results within the chain.
+  _.tap = function(obj, interceptor) {
+    interceptor(obj);
+    return obj;
+  };
+
+  // Returns whether an object has a given set of `key:value` pairs.
+  _.isMatch = function(object, attrs) {
+    var keys = _.keys(attrs), length = keys.length;
+    if (object == null) return !length;
+    var obj = Object(object);
+    for (var i = 0; i < length; i++) {
+      var key = keys[i];
+      if (attrs[key] !== obj[key] || !(key in obj)) return false;
+    }
+    return true;
+  };
+
+
+  // Internal recursive comparison function for `isEqual`.
+  var eq, deepEq;
+  eq = function(a, b, aStack, bStack) {
+    // Identical objects are equal. `0 === -0`, but they aren't identical.
+    // See the [Harmony `egal` proposal](http://wiki.ecmascript.org/doku.php?id=harmony:egal).
+    if (a === b) return a !== 0 || 1 / a === 1 / b;
+    // `null` or `undefined` only equal to itself (strict comparison).
+    if (a == null || b == null) return false;
+    // `NaN`s are equivalent, but non-reflexive.
+    if (a !== a) return b !== b;
+    // Exhaust primitive checks
+    var type = typeof a;
+    if (type !== 'function' && type !== 'object' && typeof b != 'object') return false;
+    return deepEq(a, b, aStack, bStack);
+  };
+
+  // Internal recursive comparison function for `isEqual`.
+  deepEq = function(a, b, aStack, bStack) {
+    // Unwrap any wrapped objects.
+    if (a instanceof _) a = a._wrapped;
+    if (b instanceof _) b = b._wrapped;
+    // Compare `[[Class]]` names.
+    var className = toString.call(a);
+    if (className !== toString.call(b)) return false;
+    switch (className) {
+      // Strings, numbers, regular expressions, dates, and booleans are compared by value.
+      case '[object RegExp]':
+      // RegExps are coerced to strings for comparison (Note: '' + /a/i === '/a/i')
+      case '[object String]':
+        // Primitives and their corresponding object wrappers are equivalent; thus, `"5"` is
+        // equivalent to `new String("5")`.
+        return '' + a === '' + b;
+      case '[object Number]':
+        // `NaN`s are equivalent, but non-reflexive.
+        // Object(NaN) is equivalent to NaN.
+        if (+a !== +a) return +b !== +b;
+        // An `egal` comparison is performed for other numeric values.
+        return +a === 0 ? 1 / +a === 1 / b : +a === +b;
+      case '[object Date]':
+      case '[object Boolean]':
+        // Coerce dates and booleans to numeric primitive values. Dates are compared by their
+        // millisecond representations. Note that invalid dates with millisecond representations
+        // of `NaN` are not equivalent.
+        return +a === +b;
+      case '[object Symbol]':
+        return SymbolProto.valueOf.call(a) === SymbolProto.valueOf.call(b);
+    }
+
+    var areArrays = className === '[object Array]';
+    if (!areArrays) {
+      if (typeof a != 'object' || typeof b != 'object') return false;
+
+      // Objects with different constructors are not equivalent, but `Object`s or `Array`s
+      // from different frames are.
+      var aCtor = a.constructor, bCtor = b.constructor;
+      if (aCtor !== bCtor && !(_.isFunction(aCtor) && aCtor instanceof aCtor &&
+                               _.isFunction(bCtor) && bCtor instanceof bCtor)
+                          && ('constructor' in a && 'constructor' in b)) {
+        return false;
+      }
+    }
+    // Assume equality for cyclic structures. The algorithm for detecting cyclic
+    // structures is adapted from ES 5.1 section 15.12.3, abstract operation `JO`.
+
+    // Initializing stack of traversed objects.
+    // It's done here since we only need them for objects and arrays comparison.
+    aStack = aStack || [];
+    bStack = bStack || [];
+    var length = aStack.length;
+    while (length--) {
+      // Linear search. Performance is inversely proportional to the number of
+      // unique nested structures.
+      if (aStack[length] === a) return bStack[length] === b;
+    }
+
+    // Add the first object to the stack of traversed objects.
+    aStack.push(a);
+    bStack.push(b);
+
+    // Recursively compare objects and arrays.
+    if (areArrays) {
+      // Compare array lengths to determine if a deep comparison is necessary.
+      length = a.length;
+      if (length !== b.length) return false;
+      // Deep compare the contents, ignoring non-numeric properties.
+      while (length--) {
+        if (!eq(a[length], b[length], aStack, bStack)) return false;
+      }
+    } else {
+      // Deep compare objects.
+      var keys = _.keys(a), key;
+      length = keys.length;
+      // Ensure that both objects contain the same number of properties before comparing deep equality.
+      if (_.keys(b).length !== length) return false;
+      while (length--) {
+        // Deep compare each member
+        key = keys[length];
+        if (!(_.has(b, key) && eq(a[key], b[key], aStack, bStack))) return false;
+      }
+    }
+    // Remove the first object from the stack of traversed objects.
+    aStack.pop();
+    bStack.pop();
+    return true;
+  };
+
+  // Perform a deep comparison to check if two objects are equal.
+  _.isEqual = function(a, b) {
+    return eq(a, b);
+  };
+
+  // Is a given array, string, or object empty?
+  // An "empty" object has no enumerable own-properties.
+  _.isEmpty = function(obj) {
+    if (obj == null) return true;
+    if (isArrayLike(obj) && (_.isArray(obj) || _.isString(obj) || _.isArguments(obj))) return obj.length === 0;
+    return _.keys(obj).length === 0;
+  };
+
+  // Is a given value a DOM element?
+  _.isElement = function(obj) {
+    return !!(obj && obj.nodeType === 1);
+  };
+
+  // Is a given value an array?
+  // Delegates to ECMA5's native Array.isArray
+  _.isArray = nativeIsArray || function(obj) {
+    return toString.call(obj) === '[object Array]';
+  };
+
+  // Is a given variable an object?
+  _.isObject = function(obj) {
+    var type = typeof obj;
+    return type === 'function' || type === 'object' && !!obj;
+  };
+
+  // Add some isType methods: isArguments, isFunction, isString, isNumber, isDate, isRegExp, isError, isMap, isWeakMap, isSet, isWeakSet.
+  _.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp', 'Error', 'Symbol', 'Map', 'WeakMap', 'Set', 'WeakSet'], function(name) {
+    _['is' + name] = function(obj) {
+      return toString.call(obj) === '[object ' + name + ']';
+    };
+  });
+
+  // Define a fallback version of the method in browsers (ahem, IE < 9), where
+  // there isn't any inspectable "Arguments" type.
+  if (!_.isArguments(arguments)) {
+    _.isArguments = function(obj) {
+      return _.has(obj, 'callee');
+    };
+  }
+
+  // Optimize `isFunction` if appropriate. Work around some typeof bugs in old v8,
+  // IE 11 (#1621), Safari 8 (#1929), and PhantomJS (#2236).
+  var nodelist = root.document && root.document.childNodes;
+  if (typeof /./ != 'function' && typeof Int8Array != 'object' && typeof nodelist != 'function') {
+    _.isFunction = function(obj) {
+      return typeof obj == 'function' || false;
+    };
+  }
+
+  // Is a given object a finite number?
+  _.isFinite = function(obj) {
+    return !_.isSymbol(obj) && isFinite(obj) && !isNaN(parseFloat(obj));
+  };
+
+  // Is the given value `NaN`?
+  _.isNaN = function(obj) {
+    return _.isNumber(obj) && isNaN(obj);
+  };
+
+  // Is a given value a boolean?
+  _.isBoolean = function(obj) {
+    return obj === true || obj === false || toString.call(obj) === '[object Boolean]';
+  };
+
+  // Is a given value equal to null?
+  _.isNull = function(obj) {
+    return obj === null;
+  };
+
+  // Is a given variable undefined?
+  _.isUndefined = function(obj) {
+    return obj === void 0;
+  };
+
+  // Shortcut function for checking if an object has a given property directly
+  // on itself (in other words, not on a prototype).
+  _.has = function(obj, path) {
+    if (!_.isArray(path)) {
+      return obj != null && hasOwnProperty.call(obj, path);
+    }
+    var length = path.length;
+    for (var i = 0; i < length; i++) {
+      var key = path[i];
+      if (obj == null || !hasOwnProperty.call(obj, key)) {
+        return false;
+      }
+      obj = obj[key];
+    }
+    return !!length;
+  };
+
+  // Utility Functions
+  // -----------------
+
+  // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
+  // previous owner. Returns a reference to the Underscore object.
+  _.noConflict = function() {
+    root._ = previousUnderscore;
+    return this;
+  };
+
+  // Keep the identity function around for default iteratees.
+  _.identity = function(value) {
+    return value;
+  };
+
+  // Predicate-generating functions. Often useful outside of Underscore.
+  _.constant = function(value) {
+    return function() {
+      return value;
+    };
+  };
+
+  _.noop = function(){};
+
+  // Creates a function that, when passed an object, will traverse that object’s
+  // properties down the given `path`, specified as an array of keys or indexes.
+  _.property = function(path) {
+    if (!_.isArray(path)) {
+      return shallowProperty(path);
+    }
+    return function(obj) {
+      return deepGet(obj, path);
+    };
+  };
+
+  // Generates a function for a given object that returns a given property.
+  _.propertyOf = function(obj) {
+    if (obj == null) {
+      return function(){};
+    }
+    return function(path) {
+      return !_.isArray(path) ? obj[path] : deepGet(obj, path);
+    };
+  };
+
+  // Returns a predicate for checking whether an object has a given set of
+  // `key:value` pairs.
+  _.matcher = _.matches = function(attrs) {
+    attrs = _.extendOwn({}, attrs);
+    return function(obj) {
+      return _.isMatch(obj, attrs);
+    };
+  };
+
+  // Run a function **n** times.
+  _.times = function(n, iteratee, context) {
+    var accum = Array(Math.max(0, n));
+    iteratee = optimizeCb(iteratee, context, 1);
+    for (var i = 0; i < n; i++) accum[i] = iteratee(i);
+    return accum;
+  };
+
+  // Return a random integer between min and max (inclusive).
+  _.random = function(min, max) {
+    if (max == null) {
+      max = min;
+      min = 0;
+    }
+    return min + Math.floor(Math.random() * (max - min + 1));
+  };
+
+  // A (possibly faster) way to get the current timestamp as an integer.
+  _.now = Date.now || function() {
+    return new Date().getTime();
+  };
+
+  // List of HTML entities for escaping.
+  var escapeMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#x27;',
+    '`': '&#x60;'
+  };
+  var unescapeMap = _.invert(escapeMap);
+
+  // Functions for escaping and unescaping strings to/from HTML interpolation.
+  var createEscaper = function(map) {
+    var escaper = function(match) {
+      return map[match];
+    };
+    // Regexes for identifying a key that needs to be escaped.
+    var source = '(?:' + _.keys(map).join('|') + ')';
+    var testRegexp = RegExp(source);
+    var replaceRegexp = RegExp(source, 'g');
+    return function(string) {
+      string = string == null ? '' : '' + string;
+      return testRegexp.test(string) ? string.replace(replaceRegexp, escaper) : string;
+    };
+  };
+  _.escape = createEscaper(escapeMap);
+  _.unescape = createEscaper(unescapeMap);
+
+  // Traverses the children of `obj` along `path`. If a child is a function, it
+  // is invoked with its parent as context. Returns the value of the final
+  // child, or `fallback` if any child is undefined.
+  _.result = function(obj, path, fallback) {
+    if (!_.isArray(path)) path = [path];
+    var length = path.length;
+    if (!length) {
+      return _.isFunction(fallback) ? fallback.call(obj) : fallback;
+    }
+    for (var i = 0; i < length; i++) {
+      var prop = obj == null ? void 0 : obj[path[i]];
+      if (prop === void 0) {
+        prop = fallback;
+        i = length; // Ensure we don't continue iterating.
+      }
+      obj = _.isFunction(prop) ? prop.call(obj) : prop;
+    }
+    return obj;
+  };
+
+  // Generate a unique integer id (unique within the entire client session).
+  // Useful for temporary DOM ids.
+  var idCounter = 0;
+  _.uniqueId = function(prefix) {
+    var id = ++idCounter + '';
+    return prefix ? prefix + id : id;
+  };
+
+  // By default, Underscore uses ERB-style template delimiters, change the
+  // following template settings to use alternative delimiters.
+  _.templateSettings = {
+    evaluate: /<%([\s\S]+?)%>/g,
+    interpolate: /<%=([\s\S]+?)%>/g,
+    escape: /<%-([\s\S]+?)%>/g
+  };
+
+  // When customizing `templateSettings`, if you don't want to define an
+  // interpolation, evaluation or escaping regex, we need one that is
+  // guaranteed not to match.
+  var noMatch = /(.)^/;
+
+  // Certain characters need to be escaped so that they can be put into a
+  // string literal.
+  var escapes = {
+    "'": "'",
+    '\\': '\\',
+    '\r': 'r',
+    '\n': 'n',
+    '\u2028': 'u2028',
+    '\u2029': 'u2029'
+  };
+
+  var escapeRegExp = /\\|'|\r|\n|\u2028|\u2029/g;
+
+  var escapeChar = function(match) {
+    return '\\' + escapes[match];
+  };
+
+  // JavaScript micro-templating, similar to John Resig's implementation.
+  // Underscore templating handles arbitrary delimiters, preserves whitespace,
+  // and correctly escapes quotes within interpolated code.
+  // NB: `oldSettings` only exists for backwards compatibility.
+  _.template = function(text, settings, oldSettings) {
+    if (!settings && oldSettings) settings = oldSettings;
+    settings = _.defaults({}, settings, _.templateSettings);
+
+    // Combine delimiters into one regular expression via alternation.
+    var matcher = RegExp([
+      (settings.escape || noMatch).source,
+      (settings.interpolate || noMatch).source,
+      (settings.evaluate || noMatch).source
+    ].join('|') + '|$', 'g');
+
+    // Compile the template source, escaping string literals appropriately.
+    var index = 0;
+    var source = "__p+='";
+    text.replace(matcher, function(match, escape, interpolate, evaluate, offset) {
+      source += text.slice(index, offset).replace(escapeRegExp, escapeChar);
+      index = offset + match.length;
+
+      if (escape) {
+        source += "'+\n((__t=(" + escape + "))==null?'':_.escape(__t))+\n'";
+      } else if (interpolate) {
+        source += "'+\n((__t=(" + interpolate + "))==null?'':__t)+\n'";
+      } else if (evaluate) {
+        source += "';\n" + evaluate + "\n__p+='";
+      }
+
+      // Adobe VMs need the match returned to produce the correct offset.
+      return match;
+    });
+    source += "';\n";
+
+    // If a variable is not specified, place data values in local scope.
+    if (!settings.variable) source = 'with(obj||{}){\n' + source + '}\n';
+
+    source = "var __t,__p='',__j=Array.prototype.join," +
+      "print=function(){__p+=__j.call(arguments,'');};\n" +
+      source + 'return __p;\n';
+
+    var render;
+    try {
+      render = new Function(settings.variable || 'obj', '_', source);
+    } catch (e) {
+      e.source = source;
+      throw e;
+    }
+
+    var template = function(data) {
+      return render.call(this, data, _);
+    };
+
+    // Provide the compiled source as a convenience for precompilation.
+    var argument = settings.variable || 'obj';
+    template.source = 'function(' + argument + '){\n' + source + '}';
+
+    return template;
+  };
+
+  // Add a "chain" function. Start chaining a wrapped Underscore object.
+  _.chain = function(obj) {
+    var instance = _(obj);
+    instance._chain = true;
+    return instance;
+  };
+
+  // OOP
+  // ---------------
+  // If Underscore is called as a function, it returns a wrapped object that
+  // can be used OO-style. This wrapper holds altered versions of all the
+  // underscore functions. Wrapped objects may be chained.
+
+  // Helper function to continue chaining intermediate results.
+  var chainResult = function(instance, obj) {
+    return instance._chain ? _(obj).chain() : obj;
+  };
+
+  // Add your own custom functions to the Underscore object.
+  _.mixin = function(obj) {
+    _.each(_.functions(obj), function(name) {
+      var func = _[name] = obj[name];
+      _.prototype[name] = function() {
+        var args = [this._wrapped];
+        push.apply(args, arguments);
+        return chainResult(this, func.apply(_, args));
+      };
+    });
+    return _;
+  };
+
+  // Add all of the Underscore functions to the wrapper object.
+  _.mixin(_);
+
+  // Add all mutator Array functions to the wrapper.
+  _.each(['pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift'], function(name) {
+    var method = ArrayProto[name];
+    _.prototype[name] = function() {
+      var obj = this._wrapped;
+      method.apply(obj, arguments);
+      if ((name === 'shift' || name === 'splice') && obj.length === 0) delete obj[0];
+      return chainResult(this, obj);
+    };
+  });
+
+  // Add all accessor Array functions to the wrapper.
+  _.each(['concat', 'join', 'slice'], function(name) {
+    var method = ArrayProto[name];
+    _.prototype[name] = function() {
+      return chainResult(this, method.apply(this._wrapped, arguments));
+    };
+  });
+
+  // Extracts the result from a wrapped and chained object.
+  _.prototype.value = function() {
+    return this._wrapped;
+  };
+
+  // Provide unwrapping proxy for some methods used in engine operations
+  // such as arithmetic and JSON stringification.
+  _.prototype.valueOf = _.prototype.toJSON = _.prototype.value;
+
+  _.prototype.toString = function() {
+    return String(this._wrapped);
+  };
+
+  // AMD registration happens at the end for compatibility with AMD loaders
+  // that may not enforce next-turn semantics on modules. Even though general
+  // practice for AMD registration is to be anonymous, underscore registers
+  // as a named module because, like jQuery, it is a base library that is
+  // popular enough to be bundled in a third party lib, but not be part of
+  // an AMD load request. Those cases could generate an error when an
+  // anonymous define() is called outside of a loader request.
+  if (typeof define == 'function' && define.amd) {
+    define('underscore', [], function() {
+      return _;
+    });
+  }
+}());
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],223:[function(require,module,exports){
 'use strict';
 
 var Keycodes = require('./keycodes');
@@ -27023,7 +28715,7 @@ var C = {
 
 module.exports = C;
 
-},{"./keycodes":223,"./local":224,"./presets":225}],223:[function(require,module,exports){
+},{"./keycodes":224,"./local":225,"./presets":226}],224:[function(require,module,exports){
 'use strict';
 
 var _keyplus_keycodes;
@@ -27428,7 +29120,9 @@ var keycodes = {
 	'MEH_T()': new Keycode(new Template(['MEH_T', 'KEY'], 'MEH_T(%1)'), '%1>CSA-none', []),
 	'LCAG_T()': new Keycode(new Template(['LCAG_T', 'KEY'], 'LCAG_T(%1)'), '%1>CAG-none', []),
 	'ALL_T()': new Keycode(new Template(['ALL_T', 'KEY'], 'ALL_T(%1)'), '%1>CSAG-none', []),
-	'M()': new Keycode(new Template(['M', 'MACRO'], 'M(%1)'), 'MACRO(%1)', [])
+	'M()': new Keycode(new Template(['M', 'MACRO'], 'M(%1)'), 'MACRO(%1)', []),
+	// New additions
+	'MOD()': new Keycode(new Template(['MOD', 'MOD', 'KEY'], 'MOD(%1, %2)'), '(%1)-%2', [])
 };
 
 // Generate aliases.
@@ -27480,7 +29174,15 @@ var categories = {
 		//'RGB_TOG', 'RGB_MOD', 'RGB_HUI', 'RGB_HUD', 'RGB_SAI', 'RGB_SAD', 'RGB_VAI', 'RGB_VAD'
 	],
 
-	'FN': ['KC_GESC', '', 'LCTL()', 'LSFT()', 'LALT()', 'LGUI()', 'RCTL()', 'RSFT()', 'RALT()', 'RGUI()', '', 'ALTG()', 'LCAG()', 'MEH()', 'HYPR()', '', 'TO()', 'MO()', 'TG()', 'OSL()', 'LT()', '', 'OSM()', 'MT()', 'CTL_T()', 'SFT_T()', 'ALT_T()', 'GUI_T()', '', 'C_S_T()', 'MEH_T()', 'LCAG_T()', 'ALL_T()', '']
+	'FN': ['KC_GESC', '',
+
+	//'LCTL()', 'LSFT()', 'LALT()', 'LGUI()',  'RCTL()', 'RSFT()', 'RALT()', 'RGUI()', '',
+
+	'MOD()', 'OSM()', '',
+
+	//'ALTG()', 'LCAG()', 'MEH()', 'HYPR()', '',
+
+	'TO()', 'MO()', 'TG()', 'OSL()', '', 'LT()', 'MT()', '']
 };
 
 // Generate reverse categories.
@@ -27683,7 +29385,6 @@ var keyplus_keycodes = (_keyplus_keycodes = {
 	"KC_RSFT": "rsft",
 	"KC_LSFT": "lsft",
 	"KC_LGUI": "lgui",
-	"KC_LCMD": "lgui",
 	"KC_RGUI": "rgui",
 	"KC_LALT": "lalt",
 	"KC_RALT": "ralt",
@@ -27802,17 +29503,16 @@ var keyplus_keycodes = (_keyplus_keycodes = {
 	"KC_LOCKING_NUM": "locking_num_lock",
 	"KC_LOCKING_SCROLL": "locking_scroll_lock",
 	"KC_ERAS": "alternate_erase"
-}, _defineProperty(_keyplus_keycodes, 'KC_ALT_ERASE', "alternate_erase"), _defineProperty(_keyplus_keycodes, "KC_CLEAR", "clear"), _defineProperty(_keyplus_keycodes, "KC_NUHS", "iso#"), _defineProperty(_keyplus_keycodes, "KC_NUBS", "iso\\"), _defineProperty(_keyplus_keycodes, "KC_RO", "int1"), _defineProperty(_keyplus_keycodes, "KC_INT1", "int1"), _defineProperty(_keyplus_keycodes, "KC_KANA", "int2"), _defineProperty(_keyplus_keycodes, "KC_INT2", "int2"), _defineProperty(_keyplus_keycodes, "KC_JYEN", "int3"), _defineProperty(_keyplus_keycodes, "KC_INT3", "int3"), _defineProperty(_keyplus_keycodes, "KC_HENK", "int4"), _defineProperty(_keyplus_keycodes, "KC_INT4", "int4"), _defineProperty(_keyplus_keycodes, "KC_MHEN", "int5"), _defineProperty(_keyplus_keycodes, "KC_INT5", "int5"), _defineProperty(_keyplus_keycodes, "KC_INT6", "int6"), _defineProperty(_keyplus_keycodes, "KC_INT7", "int7"), _defineProperty(_keyplus_keycodes, "KC_INT8", "int8"), _defineProperty(_keyplus_keycodes, "KC_INT9", "int9"), _defineProperty(_keyplus_keycodes, "KC_HAEN", "lang1"), _defineProperty(_keyplus_keycodes, "KC_LANG1", "lang1"), _defineProperty(_keyplus_keycodes, "KC_HANJ", "lang2"), _defineProperty(_keyplus_keycodes, "KC_LANG2", "lang2"), _defineProperty(_keyplus_keycodes, "KC_LANG3", "lang3"), _defineProperty(_keyplus_keycodes, "KC_LANG4", "lang4"), _defineProperty(_keyplus_keycodes, "KC_LANG5", "lang5"), _defineProperty(_keyplus_keycodes, "KC_LANG6", "lang6"), _defineProperty(_keyplus_keycodes, "KC_LANG7", "lang7"), _defineProperty(_keyplus_keycodes, "KC_LANG8", "lang8"), _defineProperty(_keyplus_keycodes, "KC_LANG9", "lang9"), _defineProperty(_keyplus_keycodes, "KC__MUTE", "mute"), _defineProperty(_keyplus_keycodes, "KC_MUTE", "mute"), _defineProperty(_keyplus_keycodes, "KC_AUDIO_MUTE", "mute"), _defineProperty(_keyplus_keycodes, "KC_VOLU", "volu"), _defineProperty(_keyplus_keycodes, "KC__VOLUP", "volu"), _defineProperty(_keyplus_keycodes, "KC_AUDIO_VOL_UP", "volu"), _defineProperty(_keyplus_keycodes, "KC_VOLD", "vold"), _defineProperty(_keyplus_keycodes, "KC__VOLDOWN", "vold"), _defineProperty(_keyplus_keycodes, "KC_AUDIO_VOL_DOWN", "vold"), _defineProperty(_keyplus_keycodes, "KC_MNXT", "mnxt"), _defineProperty(_keyplus_keycodes, "KC_MPRV", "mprv"), _defineProperty(_keyplus_keycodes, "KC_MFFD", "mffd"), _defineProperty(_keyplus_keycodes, "KC_MRWD", "mrwd"), _defineProperty(_keyplus_keycodes, "KC_MSTP", "mstp"), _defineProperty(_keyplus_keycodes, "KC_MPLY", "mply"), _defineProperty(_keyplus_keycodes, "KC_MSEL", "msel"), _defineProperty(_keyplus_keycodes, "KC_EJCT", "mjct"), _defineProperty(_keyplus_keycodes, "KC_MAIL", "mail"), _defineProperty(_keyplus_keycodes, "KC_CALC", "calc"), _defineProperty(_keyplus_keycodes, "KC_MYCM", "comp"), _defineProperty(_keyplus_keycodes, "KC_WSCH", "www_search"), _defineProperty(_keyplus_keycodes, "KC_WHOM", "www_home"), _defineProperty(_keyplus_keycodes, "KC_WBAK", "www_back"), _defineProperty(_keyplus_keycodes, "KC_WFWD", "www_forward"), _defineProperty(_keyplus_keycodes, "KC_WSTP", "www_stop"), _defineProperty(_keyplus_keycodes, "KC_WREF", "www_refresh"), _defineProperty(_keyplus_keycodes, "KC_WFAV", "www_favourites"), _defineProperty(_keyplus_keycodes, "KC_MS_U", "ms_u"), _defineProperty(_keyplus_keycodes, "KC_MS_D", "ms_d"), _defineProperty(_keyplus_keycodes, "KC_MS_L", "ms_l"), _defineProperty(_keyplus_keycodes, "KC_MS_R", "ms_r"), _defineProperty(_keyplus_keycodes, "KC_BTN1", "btn1"), _defineProperty(_keyplus_keycodes, "KC_BTN2", "btn2"), _defineProperty(_keyplus_keycodes, "KC_BTN3", "btn3"), _defineProperty(_keyplus_keycodes, "KC_BTN4", "btn4"), _defineProperty(_keyplus_keycodes, "KC_BTN5", "btn5"), _defineProperty(_keyplus_keycodes, "KC_WH_U", "wh_u"), _defineProperty(_keyplus_keycodes, "KC_WH_D", "wh_d"), _defineProperty(_keyplus_keycodes, "KC_WH_L", "wh_l"), _defineProperty(_keyplus_keycodes, "KC_WH_R", "wh_r"), _defineProperty(_keyplus_keycodes, "KC_PWR", "system_power"), _defineProperty(_keyplus_keycodes, "KC_POWER", "system_power"), _defineProperty(_keyplus_keycodes, "KC_SLEP", "system_sleep"), _defineProperty(_keyplus_keycodes, "KC_WAKE", "system_wake"), _defineProperty(_keyplus_keycodes, "KC_HYPR", "csag-none"), _defineProperty(_keyplus_keycodes, "KC_MEH", "csa-none"), _keyplus_keycodes);
+}, _defineProperty(_keyplus_keycodes, 'KC_ALT_ERASE', "alternate_erase"), _defineProperty(_keyplus_keycodes, "KC_CLEAR", "clear"), _defineProperty(_keyplus_keycodes, "KC_NUHS", "iso#"), _defineProperty(_keyplus_keycodes, "KC_NUBS", "iso\\"), _defineProperty(_keyplus_keycodes, "KC_RO", "int1"), _defineProperty(_keyplus_keycodes, "KC_INT1", "int1"), _defineProperty(_keyplus_keycodes, "KC_KANA", "int2"), _defineProperty(_keyplus_keycodes, "KC_INT2", "int2"), _defineProperty(_keyplus_keycodes, "KC_JYEN", "int3"), _defineProperty(_keyplus_keycodes, "KC_INT3", "int3"), _defineProperty(_keyplus_keycodes, "KC_HENK", "int4"), _defineProperty(_keyplus_keycodes, "KC_INT4", "int4"), _defineProperty(_keyplus_keycodes, "KC_MHEN", "int5"), _defineProperty(_keyplus_keycodes, "KC_INT5", "int5"), _defineProperty(_keyplus_keycodes, "KC_INT6", "int6"), _defineProperty(_keyplus_keycodes, "KC_INT7", "int7"), _defineProperty(_keyplus_keycodes, "KC_INT8", "int8"), _defineProperty(_keyplus_keycodes, "KC_INT9", "int9"), _defineProperty(_keyplus_keycodes, "KC_HAEN", "lang1"), _defineProperty(_keyplus_keycodes, "KC_LANG1", "lang1"), _defineProperty(_keyplus_keycodes, "KC_HANJ", "lang2"), _defineProperty(_keyplus_keycodes, "KC_LANG2", "lang2"), _defineProperty(_keyplus_keycodes, "KC_LANG3", "lang3"), _defineProperty(_keyplus_keycodes, "KC_LANG4", "lang4"), _defineProperty(_keyplus_keycodes, "KC_LANG5", "lang5"), _defineProperty(_keyplus_keycodes, "KC_LANG6", "lang6"), _defineProperty(_keyplus_keycodes, "KC_LANG7", "lang7"), _defineProperty(_keyplus_keycodes, "KC_LANG8", "lang8"), _defineProperty(_keyplus_keycodes, "KC_LANG9", "lang9"), _defineProperty(_keyplus_keycodes, "KC_MUTE", "mute"), _defineProperty(_keyplus_keycodes, "KC_VOLU", "volu"), _defineProperty(_keyplus_keycodes, "KC_VOLD", "vold"), _defineProperty(_keyplus_keycodes, "KC_MNXT", "mnxt"), _defineProperty(_keyplus_keycodes, "KC_MPRV", "mprv"), _defineProperty(_keyplus_keycodes, "KC_MFFD", "mffd"), _defineProperty(_keyplus_keycodes, "KC_MRWD", "mrwd"), _defineProperty(_keyplus_keycodes, "KC_MSTP", "mstp"), _defineProperty(_keyplus_keycodes, "KC_MPLY", "mply"), _defineProperty(_keyplus_keycodes, "KC_MSEL", "msel"), _defineProperty(_keyplus_keycodes, "KC_EJCT", "mjct"), _defineProperty(_keyplus_keycodes, "KC_MAIL", "mail"), _defineProperty(_keyplus_keycodes, "KC_CALC", "calc"), _defineProperty(_keyplus_keycodes, "KC_MYCM", "comp"), _defineProperty(_keyplus_keycodes, "KC_WSCH", "www_search"), _defineProperty(_keyplus_keycodes, "KC_WHOM", "www_home"), _defineProperty(_keyplus_keycodes, "KC_WBAK", "www_back"), _defineProperty(_keyplus_keycodes, "KC_WFWD", "www_forward"), _defineProperty(_keyplus_keycodes, "KC_WSTP", "www_stop"), _defineProperty(_keyplus_keycodes, "KC_WREF", "www_refresh"), _defineProperty(_keyplus_keycodes, "KC_WFAV", "www_favourites"), _defineProperty(_keyplus_keycodes, "KC_MS_U", "ms_u"), _defineProperty(_keyplus_keycodes, "KC_MS_D", "ms_d"), _defineProperty(_keyplus_keycodes, "KC_MS_L", "ms_l"), _defineProperty(_keyplus_keycodes, "KC_MS_R", "ms_r"), _defineProperty(_keyplus_keycodes, "KC_BTN1", "btn1"), _defineProperty(_keyplus_keycodes, "KC_BTN2", "btn2"), _defineProperty(_keyplus_keycodes, "KC_BTN3", "btn3"), _defineProperty(_keyplus_keycodes, "KC_BTN4", "btn4"), _defineProperty(_keyplus_keycodes, "KC_BTN5", "btn5"), _defineProperty(_keyplus_keycodes, "KC_WH_U", "wh_u"), _defineProperty(_keyplus_keycodes, "KC_WH_D", "wh_d"), _defineProperty(_keyplus_keycodes, "KC_WH_L", "wh_l"), _defineProperty(_keyplus_keycodes, "KC_WH_R", "wh_r"), _defineProperty(_keyplus_keycodes, "KC_PWR", "system_power"), _defineProperty(_keyplus_keycodes, "KC_POWER", "system_power"), _defineProperty(_keyplus_keycodes, "KC_SLEP", "system_sleep"), _defineProperty(_keyplus_keycodes, "KC_WAKE", "system_wake"), _defineProperty(_keyplus_keycodes, "KC_HYPR", "csag-none"), _defineProperty(_keyplus_keycodes, "KC_MEH", "csa-none"), _keyplus_keycodes);
 
 // QMK -> Keyplus Layer Functions
 var keyplus_layers = {
 
 	"MO": "L",
 	"TG": "tog_L",
-	"TT": "L",
-	"OSL": "s_L",
-	"TO": "set_L",
-	"DF": "set_L"
+	"OSL": "sticky_L",
+	"DF": "set_L",
+	"TO": "set_L"
 
 	// QMK -> Keyplus Modifier functions
 };var keyplus_mods = {
@@ -27821,14 +29521,10 @@ var keyplus_layers = {
 	"LSFT": "S",
 	"LALT": "A",
 	"LGUI": "G",
-	"LCMD": "G",
-	"LWIN": "G",
 	"RCTL": "rC",
 	"RSFT": "rS",
 	"RALT": "rA",
 	"RGUI": "rG",
-	"RWIN": "rG",
-	"RCMD": "rG",
 	// Multi Mod Keys
 	"SGUI": "SG",
 	"SCMD": "SG",
@@ -27897,6 +29593,11 @@ var legacy_mods = {
 var display_functions = {
 
 	'KC_GESC': '`esc',
+	'KC_BTN1': 'btn1',
+	'KC_BTN2': 'btn2',
+	'KC_BTN3': 'btn3',
+	'KC_BTN4': 'btn4',
+	'KC_BTN5': 'btn5',
 	'LCTL()': 'C-',
 	'LSFT()': 'S-',
 	'LALT()': 'A-',
@@ -27925,7 +29626,9 @@ var display_functions = {
 	'MEH_T()': 'Tap>MEH-',
 	'LCAG_T()': 'Tap>CAG-',
 	'ALL_T()': 'Tap>HYPR-',
-	'M()': 'M()'
+	'M()': 'M()',
+
+	'MOD()': 'Mod-Keys'
 };
 
 module.exports = {
@@ -27946,13 +29649,13 @@ module.exports = {
 	DISPLAY_FN: display_functions
 };
 
-},{}],224:[function(require,module,exports){
+},{}],225:[function(require,module,exports){
 module.exports={
     "API": "",
     "PRESETS": "static/presets/"
 }
 
-},{}],225:[function(require,module,exports){
+},{}],226:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -27971,7 +29674,7 @@ module.exports = {
 	'miuni32-rgb-standard': 'Miuni32 RGB (Standard)'
 };
 
-},{}],226:[function(require,module,exports){
+},{}],227:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -28013,7 +29716,7 @@ var Generator = function () {
 
 module.exports = Generator;
 
-},{}],227:[function(require,module,exports){
+},{}],228:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -28050,7 +29753,6 @@ var KeyplusY = function (_Generator) {
 			// Generate the keymaps.
 			var keymaps = '';
 			var explicit = '';
-			console.log(keyboard.keys);
 			for (var layer = 0; layer < C.KEYMAP_MAX_LAYERS; layer++) {
 				var layerMap = '      [ # Layer ' + String(layer) + '\n        [\n          ';
 				for (var row = 0; row < keyboard.rows; row++) {
@@ -28151,7 +29853,7 @@ var KeyplusY = function (_Generator) {
 												//keycode = '\'' + C.LEGACY_MODS[second]+'-none' + '~' + C.KEYPLUS_DOUBLE[func] + first + '\''
 												//}
 											} else {
-												keycode = 'trns';
+												keycode = '____';
 											}
 							}
 						}
@@ -28206,12 +29908,12 @@ var KeyplusY = function (_Generator) {
 
 module.exports = KeyplusY;
 
-},{"./index":226,"./templates/layout.yaml":228,"const":222}],228:[function(require,module,exports){
+},{"./index":227,"./templates/layout.yaml":229,"const":223}],229:[function(require,module,exports){
 "use strict";
 
 module.exports = "\n# Generated by Keyplus Builder by 2Cas (c) 2018\n# Modified from QMK Builder by Ruiqimao (c) 2018\n# https://github.com/2Cas/keyplus_builder\n# This file is released into the public domain as per the CC0 Public Domain\n# Dedication (http://creativecommons.org/publicdomain/zero/1.0/)\n---\n\nreport_mode : auto_nkro # options: auto_nkro, 6kro, nkro\n\ndevices:\n  %kb_name%:\n    id: 0\n    layout: default\n    layout_offset: 0\n    scan_mode:\n      mode: %diode_direction% # options:  col_row, row_col, pins, none\n      rows: [%row_pins%]\n      cols: [%col_pins%]\n      # Maps how keys are physically wired, to how they appear visually\n      matrix_map: [\n%matrix%\n      ]\n      # Debounce settings\n      debounce:\n         debounce_time_press: 5\n         debounce_time_release: 5\n         trigger_time_press: 1\n         trigger_time_release: 1\n         parasitic_discharge_delay_idle: 10.0\n         parasitic_discharge_delay_debouncing: 10.0\n%explicit_defs%\nlayouts:\n  default:\n    default_layer: 0\n    layers: [\n%layout%]\n    ]\n\n".trim();
 
-},{}],229:[function(require,module,exports){
+},{}],230:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -28252,7 +29954,7 @@ var Files = function () {
 
 module.exports = Files;
 
-},{"./generators/layout.yaml":227}],230:[function(require,module,exports){
+},{"./generators/layout.yaml":228}],231:[function(require,module,exports){
 'use strict';
 
 var React = require('react');
@@ -28262,7 +29964,7 @@ var Index = require('main/index');
 
 ReactDOM.render(React.createElement(Index, null), document.getElementById('content'));
 
-},{"main/index":232,"react":215,"react-dom":63}],231:[function(require,module,exports){
+},{"main/index":233,"react":215,"react-dom":63}],232:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -28312,7 +30014,7 @@ var Editor = function (_React$Component) {
 
 module.exports = Editor;
 
-},{"react":215,"ui/display":239,"ui/panes":248}],232:[function(require,module,exports){
+},{"react":215,"ui/display":240,"ui/panes":249}],233:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -28374,7 +30076,7 @@ var Index = function (_React$Component) {
 
 module.exports = Index;
 
-},{"const":222,"main/editor":231,"main/main":233,"react":215,"state":234}],233:[function(require,module,exports){
+},{"const":223,"main/editor":232,"main/main":234,"react":215,"state":235}],234:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -28479,13 +30181,11 @@ var Main = function (_React$Component) {
 						'rows': data['devices'][name]['scan_mode']['rows'],
 						'cols': data['devices'][name]['scan_mode']['cols'],
 						'matrix': data['devices'][name]['scan_mode']['matrix_map'],
-						'kle': data['devices'][name]['layout-kle'],
-						'layout': data['layouts'][layout_name]['layers']
-					};
-					console.log(info);
+						'kle': data['devices'][name]['studio_kle'],
+						'keymap': data['layouts'][layout_name]['layers']
 
-					// Build a new keyboard.
-					var keyboard = new Keyboard(state, info, true);
+						// Build a new keyboard
+					};var keyboard = new Keyboard(state, info, true);
 					console.log(keyboard);
 
 					state.update({
@@ -28513,6 +30213,7 @@ var Main = function (_React$Component) {
 
 				// Parse the KLE data.
 				var keyboard = new Keyboard(state, json);
+				console.log(keyboard);
 
 				// Make sure the data is valid.
 				if (keyboard.keys.length == 0) {
@@ -28655,7 +30356,7 @@ module.exports = Main;
 <br/><br/>
 */
 
-},{"const":222,"js-yaml":27,"react":215,"state/keyboard":235,"superagent":217,"utils":262}],234:[function(require,module,exports){
+},{"const":223,"js-yaml":27,"react":215,"state/keyboard":236,"superagent":217,"utils":263}],235:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -28726,7 +30427,7 @@ var State = function () {
 
 module.exports = State;
 
-},{"./ui":238,"const":222}],235:[function(require,module,exports){
+},{"./ui":239,"const":223}],236:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -28737,6 +30438,7 @@ var Key = require('./key');
 var Keycode = require('./keycode');
 
 var C = require('const');
+var _ = require('underscore');
 
 var Keyboard = function () {
 
@@ -28788,7 +30490,7 @@ var Keyboard = function () {
 
 		// Bind methods.
 		this.importKLE = this.importKLE.bind(this);
-		this.parseKLE = this.parseKLE.bind(this);
+		this.parseKeyboard = this.parseKeyboard.bind(this);
 		this.updateWiring = this.updateWiring.bind(this);
 		this.estimateWiring = this.estimateWiring.bind(this);
 		this.setRowPin = this.setRowPin.bind(this);
@@ -28805,31 +30507,27 @@ var Keyboard = function () {
 
 		//JSON
 		if (!is_yaml) {
+
 			// Import KLE if it exists.
 			if (data) this.importKLE(data);
 		}
 		// YAML
 		else {
 				/*
-    	let info = {
-    		'name': name,
-    		DONE 'mcu': data['devices'][name]['mcu'],
-    		DONE'diode': data['devices'][name]['scan_mode']['mode'],
-    		DONE'rows': data['devices'][name]['scan_mode']['rows'],
-    		DONE'cols': data['devices'][name]['scan_mode']['cols'],
-    		'matrix': data['devices'][name]['scan_mode']['matrix_map'],
-    		'kle': data['devices'][name]['layout-kle'],
-    		'layout': data['layouts'][layout_name]['layers'],
-    	}
-    			this.settings = {
-    		diodeDirection: C.DIODE_COL2ROW,
-    		name: '',
-    		bootloaderSize: C.BOOTLOADER_4096,
-    		rgbNum: 0,
-    		backlightLevels: 3
-    	};
-    */
-
+    		'mcu' DONE 
+    		'diode' DONE 
+    		'rows' DONE
+    		'cols' DONE
+    		'matrix' DONE 
+    		'kle' DONE 
+    		'keymap' PARTIAL
+    			TODO: 
+    		build simple kle if none is provided
+    		finish keymap parsing
+    		Fix export
+    		Redo mod-keys
+    		Robust checks (length of keymap array should be same as number of keys generated by KLE)
+    	*/
 				this.settings['name'] = data['name'];
 				switch (data['mcu']) {
 					// ATMEGA
@@ -28849,11 +30547,11 @@ var Keyboard = function () {
 					case 'row_col':
 						this.setting['diodeDirection'] = C.DIODE_ROL2COL;break;
 				}
+				// Layout may or may not have KLE data.
 				if (data['kle']) {
-					this.parseKLE(data['kle']);
-					// Pull layout data - WIP
+					// Initialise 
+					this.parseKeyboard(data['kle'], data['keymap']);
 					var index = 0;
-					console.log(data['matrix']);
 					var _iteratorNormalCompletion = true;
 					var _didIteratorError = false;
 					var _iteratorError = undefined;
@@ -28862,9 +30560,65 @@ var Keyboard = function () {
 						for (var _iterator = this.keys[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
 							var key = _step.value;
 
-							console.log(index);
+							for (var layer = 0; layer < data['keymap'].length; layer++) {
+								var keycode = data['keymap'][layer][0][index];
+								// Keycodes
+								if (keycode in _.invert(C.KEYPLUS_KEYCODES)) {
+									keycode = _.invert(C.KEYPLUS_KEYCODES)[keycode];
+									keycode = Keycode.getDefault(keycode);
+									key.keycodes[layer] = keycode;
+								} else {
+									// Layer functions
+									var L = keycode.lastIndexOf('L');
+									if (L > -1) {
+										var func = keycode.substring(0, L + 1);
+										var target = Number(keycode.substring(L + 1, keycode.length));
+
+										if (func in _.invert(C.KEYPLUS_LAYER)) {
+											func = _.invert(C.KEYPLUS_LAYER)[func];
+											keycode = Keycode.getDefault(func + '()');
+											keycode.fields = [target];
+											key.keycodes[layer] = keycode;
+										}
+									}
+									// Mod-keys
+									else if (keycode.includes('-')) {
+											keycode = keycode.split('-');
+											var mods = keycode[0];
+											var _target = keycode[1];
+											var first_keycode = void 0,
+											    mod = void 0;
+											// TODO: Replace with simple bitwise MOD() function
+											for (var _index = 0; _index < mods.length; _index++) {
+												if (mods[_index] == 'r') {
+													mod = mods.substring(_index, _index + 2);
+												} else {
+													mod = mods[_index];
+												}
+												if (mod in _.invert(C.KEYPLUS_MODS)) {
+													mod = _.invert(C.KEYPLUS_MODS)[mod];
+													var new_keycode = Keycode.getDefault(mod + '()');
+													if (keycode.constructor === Array) {
+														keycode = new_keycode;
+														first_keycode = keycode;
+													} else {
+														keycode.fields = [new_keycode];
+														keycode = new_keycode;
+													}
+												}
+												_index++;
+											}
+											// Check validity
+											if (_target in _.invert(C.KEYPLUS_KEYCODES) && keycode.constructor !== Array) {
+												_target = _.invert(C.KEYPLUS_KEYCODES)[_target];
+												keycode.fields = [Keycode.getDefault(_target)];
+												key.keycodes[layer] = first_keycode;
+											}
+										}
+								}
+							}
+
 							var row_col = data['matrix'][index];
-							console.log(row_col);
 							row_col = row_col.split('c');
 
 							key._row = Number(row_col[0].substring(1, row_col[0].length));
@@ -28886,7 +30640,8 @@ var Keyboard = function () {
 						}
 					}
 				} else {
-					this.estimateWiring();
+					// build simple KLE
+					// this.estimateWiring();
 				}
 
 				if (data['rows'].constructor === Array) {
@@ -28898,45 +30653,19 @@ var Keyboard = function () {
 					this._cols = data['cols'].length;
 				}
 				this.updateWiring();
-
-				console.log(data['matrix']);
 			}
 		// Verify validity.
 		this.verify();
 	}
 
 	/*
-  * Import a KLE layout.
-  *
-  * @param {Object} json The KLE layout to import.
+  * Process KLE data (for yaml)
   */
 
 
 	_createClass(Keyboard, [{
-		key: 'importKLE',
-		value: function importKLE(json) {
-			// Parse KLE -> Keys
-			this.parseKLE(json);
-
-			// Estimate the wiring.
-			this.estimateWiring();
-
-			// Initialize pins.
-			var usedPins = 0;
-			for (var i = 0; i < this.rows; i++) {
-				this.pins.row.push(C.PINS[this.controller][Math.min(usedPins++, C.PINS[this.controller].length)]);
-			}
-			for (var _i = 0; _i < this.cols; _i++) {
-				this.pins.col.push(C.PINS[this.controller][Math.min(usedPins++, C.PINS[this.controller].length)]);
-			}
-		}
-		/*
-   * Process KLE data
-   */
-
-	}, {
-		key: 'parseKLE',
-		value: function parseKLE(data) {
+		key: 'parseKeyboard',
+		value: function parseKeyboard(data, keymap) {
 			// Define starting states.
 			var state = {
 				x: 0,
@@ -29094,6 +30823,183 @@ var Keyboard = function () {
 		}
 
 		/*
+   * Import a KLE layout.
+   *
+   * @param {Object} json The KLE layout to import.
+   */
+
+	}, {
+		key: 'importKLE',
+		value: function importKLE(json) {
+			// Define starting states.
+			var state = {
+				x: 0,
+				y: 0,
+				r: 0,
+				rx: 0,
+				ry: 0,
+				w: 1,
+				h: 1,
+				x2: 0,
+				y2: 0,
+				w2: 0,
+				h2: 0
+
+				// Define the x and y positions to reset to.
+			};var resetX = 0;
+			var resetY = 0;
+
+			// Iterate through all the KLE data.
+			var keyIndex = 0;
+			var _iteratorNormalCompletion5 = true;
+			var _didIteratorError5 = false;
+			var _iteratorError5 = undefined;
+
+			try {
+				for (var _iterator5 = data[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+					var row = _step5.value;
+					var _iteratorNormalCompletion7 = true;
+					var _didIteratorError7 = false;
+					var _iteratorError7 = undefined;
+
+					try {
+						for (var _iterator7 = row[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+							var entry = _step7.value;
+
+							// Check if the entry is a modifier.
+							if (entry instanceof Object) {
+								// Iterate through all the fields of the modifier.
+								for (var mod in entry) {
+									if (mod === 'x' || mod === 'y') {
+										state[mod] += entry[mod]; // x and y are added.
+									} else {
+										state[mod] = entry[mod]; // Set the state accordingly.
+									}
+
+									if (mod === 'rx') {
+										// Set resetX if new rotation point x is set.
+										resetX = state[mod];
+									}
+									if (mod === 'ry') {
+										// Set resetY if new rotation point y is set.
+										resetY = state[mod];
+									}
+									if (mod === 'rx' || mod === 'ry') {
+										// Reset the positions if new rotation point is set.
+										state.x = resetX;
+										state.y = resetY;
+									}
+								}
+								continue;
+							}
+
+							// Create a new key with the current state.
+							var key = new Key(this, keyIndex++, entry, Object.assign({}, state));
+							this.keys.push(key);
+
+							// Update bounds.
+							this.bounds.min.x = Math.min(this.bounds.min.x, key.pos.x + key.bounds.min.x);
+							this.bounds.max.x = Math.max(this.bounds.max.x, key.pos.x + key.bounds.max.x);
+							this.bounds.min.y = Math.min(this.bounds.min.y, key.pos.y + key.bounds.min.y);
+							this.bounds.max.y = Math.max(this.bounds.max.y, key.pos.y + key.bounds.max.y);
+
+							// Increment x.
+							state.x += state.w;
+
+							// Reset the temporary states.
+							state.w = 1;
+							state.h = 1;
+							state.x2 = 0;
+							state.y2 = 0;
+							state.w2 = 0;
+							state.h2 = 0;
+						}
+
+						// Increment y.
+					} catch (err) {
+						_didIteratorError7 = true;
+						_iteratorError7 = err;
+					} finally {
+						try {
+							if (!_iteratorNormalCompletion7 && _iterator7.return) {
+								_iterator7.return();
+							}
+						} finally {
+							if (_didIteratorError7) {
+								throw _iteratorError7;
+							}
+						}
+					}
+
+					state.y++;
+
+					// Reset x.
+					state.x = resetX;
+				}
+
+				// Normalize the positions and bounds.
+			} catch (err) {
+				_didIteratorError5 = true;
+				_iteratorError5 = err;
+			} finally {
+				try {
+					if (!_iteratorNormalCompletion5 && _iterator5.return) {
+						_iterator5.return();
+					}
+				} finally {
+					if (_didIteratorError5) {
+						throw _iteratorError5;
+					}
+				}
+			}
+
+			var _iteratorNormalCompletion6 = true;
+			var _didIteratorError6 = false;
+			var _iteratorError6 = undefined;
+
+			try {
+				for (var _iterator6 = this.keys[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+					var _key2 = _step6.value;
+
+					_key2.pos.x -= this.bounds.min.x;
+					_key2.pos.y -= this.bounds.min.y;
+					_key2.center.x -= this.bounds.min.x;
+					_key2.center.y -= this.bounds.min.y;
+				}
+			} catch (err) {
+				_didIteratorError6 = true;
+				_iteratorError6 = err;
+			} finally {
+				try {
+					if (!_iteratorNormalCompletion6 && _iterator6.return) {
+						_iterator6.return();
+					}
+				} finally {
+					if (_didIteratorError6) {
+						throw _iteratorError6;
+					}
+				}
+			}
+
+			this.bounds.max.x -= this.bounds.min.x;
+			this.bounds.max.y -= this.bounds.min.y;
+			this.bounds.min.x = 0;
+			this.bounds.min.y = 0;
+
+			// Estimate the wiring.
+			this.estimateWiring();
+
+			// Initialize pins.
+			var usedPins = 0;
+			for (var i = 0; i < this.rows; i++) {
+				this.pins.row.push(C.PINS[this.controller][Math.min(usedPins++, C.PINS[this.controller].length)]);
+			}
+			for (var _i = 0; _i < this.cols; _i++) {
+				this.pins.col.push(C.PINS[this.controller][Math.min(usedPins++, C.PINS[this.controller].length)]);
+			}
+		}
+
+		/*
    * Getters and setters for wiring.
    */
 
@@ -29109,13 +31015,13 @@ var Keyboard = function () {
 			this.wiring = {};
 
 			// Find all the keys again.
-			var _iteratorNormalCompletion5 = true;
-			var _didIteratorError5 = false;
-			var _iteratorError5 = undefined;
+			var _iteratorNormalCompletion8 = true;
+			var _didIteratorError8 = false;
+			var _iteratorError8 = undefined;
 
 			try {
-				for (var _iterator5 = this.keys[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-					var key = _step5.value;
+				for (var _iterator8 = this.keys[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+					var key = _step8.value;
 
 					// Update invalid keys.
 					if (key.row >= this.rows) key._row = this.rows - 1;
@@ -29127,16 +31033,16 @@ var Keyboard = function () {
 					this.wiring[k].push(key);
 				}
 			} catch (err) {
-				_didIteratorError5 = true;
-				_iteratorError5 = err;
+				_didIteratorError8 = true;
+				_iteratorError8 = err;
 			} finally {
 				try {
-					if (!_iteratorNormalCompletion5 && _iterator5.return) {
-						_iterator5.return();
+					if (!_iteratorNormalCompletion8 && _iterator8.return) {
+						_iterator8.return();
 					}
 				} finally {
-					if (_didIteratorError5) {
-						throw _iteratorError5;
+					if (_didIteratorError8) {
+						throw _iteratorError8;
 					}
 				}
 			}
@@ -29157,13 +31063,13 @@ var Keyboard = function () {
 			// Extremely naive but effective solution.
 			var minRow = Number.MAX_VALUE;
 			var minCol = Number.MAX_VALUE;
-			var _iteratorNormalCompletion6 = true;
-			var _didIteratorError6 = false;
-			var _iteratorError6 = undefined;
+			var _iteratorNormalCompletion9 = true;
+			var _didIteratorError9 = false;
+			var _iteratorError9 = undefined;
 
 			try {
-				for (var _iterator6 = this.keys[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-					var key = _step6.value;
+				for (var _iterator9 = this.keys[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+					var key = _step9.value;
 
 					// Calculate an estimated row and column.
 					var row = Math.floor(key.center.y);
@@ -29178,42 +31084,42 @@ var Keyboard = function () {
 					this._cols = Math.max(col + 1, this._cols);
 				}
 			} catch (err) {
-				_didIteratorError6 = true;
-				_iteratorError6 = err;
+				_didIteratorError9 = true;
+				_iteratorError9 = err;
 			} finally {
 				try {
-					if (!_iteratorNormalCompletion6 && _iterator6.return) {
-						_iterator6.return();
+					if (!_iteratorNormalCompletion9 && _iterator9.return) {
+						_iterator9.return();
 					}
 				} finally {
-					if (_didIteratorError6) {
-						throw _iteratorError6;
+					if (_didIteratorError9) {
+						throw _iteratorError9;
 					}
 				}
 			}
 
-			var _iteratorNormalCompletion7 = true;
-			var _didIteratorError7 = false;
-			var _iteratorError7 = undefined;
+			var _iteratorNormalCompletion10 = true;
+			var _didIteratorError10 = false;
+			var _iteratorError10 = undefined;
 
 			try {
-				for (var _iterator7 = this.keys[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-					var _key2 = _step7.value;
+				for (var _iterator10 = this.keys[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+					var _key3 = _step10.value;
 
-					_key2._row -= minRow;
-					_key2._col -= minCol;
+					_key3._row -= minRow;
+					_key3._col -= minCol;
 				}
 			} catch (err) {
-				_didIteratorError7 = true;
-				_iteratorError7 = err;
+				_didIteratorError10 = true;
+				_iteratorError10 = err;
 			} finally {
 				try {
-					if (!_iteratorNormalCompletion7 && _iterator7.return) {
-						_iterator7.return();
+					if (!_iteratorNormalCompletion10 && _iterator10.return) {
+						_iterator10.return();
 					}
 				} finally {
-					if (_didIteratorError7) {
-						throw _iteratorError7;
+					if (_didIteratorError10) {
+						throw _iteratorError10;
 					}
 				}
 			}
@@ -29298,13 +31204,13 @@ var Keyboard = function () {
 			// Make sure there are no overlapping pins.
 			var usedPins = [];
 			var overlappingPins = true;
-			var _iteratorNormalCompletion8 = true;
-			var _didIteratorError8 = false;
-			var _iteratorError8 = undefined;
+			var _iteratorNormalCompletion11 = true;
+			var _didIteratorError11 = false;
+			var _iteratorError11 = undefined;
 
 			try {
-				for (var _iterator8 = this.pins.row[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-					var pin = _step8.value;
+				for (var _iterator11 = this.pins.row[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+					var pin = _step11.value;
 
 					if (usedPins.includes(pin)) {
 						this.valid = overlappingPins = false;
@@ -29312,42 +31218,42 @@ var Keyboard = function () {
 					usedPins.push(pin);
 				}
 			} catch (err) {
-				_didIteratorError8 = true;
-				_iteratorError8 = err;
+				_didIteratorError11 = true;
+				_iteratorError11 = err;
 			} finally {
 				try {
-					if (!_iteratorNormalCompletion8 && _iterator8.return) {
-						_iterator8.return();
+					if (!_iteratorNormalCompletion11 && _iterator11.return) {
+						_iterator11.return();
 					}
 				} finally {
-					if (_didIteratorError8) {
-						throw _iteratorError8;
+					if (_didIteratorError11) {
+						throw _iteratorError11;
 					}
 				}
 			}
 
-			var _iteratorNormalCompletion9 = true;
-			var _didIteratorError9 = false;
-			var _iteratorError9 = undefined;
+			var _iteratorNormalCompletion12 = true;
+			var _didIteratorError12 = false;
+			var _iteratorError12 = undefined;
 
 			try {
-				for (var _iterator9 = this.pins.col[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-					var _pin = _step9.value;
+				for (var _iterator12 = this.pins.col[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+					var _pin = _step12.value;
 
 					if (usedPins.includes(_pin)) this.valid = overlappingPins = false;
 					usedPins.push(_pin);
 				}
 			} catch (err) {
-				_didIteratorError9 = true;
-				_iteratorError9 = err;
+				_didIteratorError12 = true;
+				_iteratorError12 = err;
 			} finally {
 				try {
-					if (!_iteratorNormalCompletion9 && _iterator9.return) {
-						_iterator9.return();
+					if (!_iteratorNormalCompletion12 && _iterator12.return) {
+						_iterator12.return();
 					}
 				} finally {
-					if (_didIteratorError9) {
-						throw _iteratorError9;
+					if (_didIteratorError12) {
+						throw _iteratorError12;
 					}
 				}
 			}
@@ -29372,77 +31278,77 @@ var Keyboard = function () {
 
 			// Check to see if there are all the recommended keys in the keymap.
 			var inKeymap = new Set();
-			var _iteratorNormalCompletion10 = true;
-			var _didIteratorError10 = false;
-			var _iteratorError10 = undefined;
+			var _iteratorNormalCompletion13 = true;
+			var _didIteratorError13 = false;
+			var _iteratorError13 = undefined;
 
 			try {
-				for (var _iterator10 = this.keys[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-					var key = _step10.value;
-					var _iteratorNormalCompletion12 = true;
-					var _didIteratorError12 = false;
-					var _iteratorError12 = undefined;
+				for (var _iterator13 = this.keys[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+					var key = _step13.value;
+					var _iteratorNormalCompletion15 = true;
+					var _didIteratorError15 = false;
+					var _iteratorError15 = undefined;
 
 					try {
-						for (var _iterator12 = key.keycodes[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-							var keycode = _step12.value;
+						for (var _iterator15 = key.keycodes[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+							var keycode = _step15.value;
 
 							inKeymap.add(keycode.id);
 						}
 					} catch (err) {
-						_didIteratorError12 = true;
-						_iteratorError12 = err;
+						_didIteratorError15 = true;
+						_iteratorError15 = err;
 					} finally {
 						try {
-							if (!_iteratorNormalCompletion12 && _iterator12.return) {
-								_iterator12.return();
+							if (!_iteratorNormalCompletion15 && _iterator15.return) {
+								_iterator15.return();
 							}
 						} finally {
-							if (_didIteratorError12) {
-								throw _iteratorError12;
+							if (_didIteratorError15) {
+								throw _iteratorError15;
 							}
 						}
 					}
 				}
 			} catch (err) {
-				_didIteratorError10 = true;
-				_iteratorError10 = err;
+				_didIteratorError13 = true;
+				_iteratorError13 = err;
 			} finally {
 				try {
-					if (!_iteratorNormalCompletion10 && _iterator10.return) {
-						_iterator10.return();
+					if (!_iteratorNormalCompletion13 && _iterator13.return) {
+						_iterator13.return();
 					}
 				} finally {
-					if (_didIteratorError10) {
-						throw _iteratorError10;
+					if (_didIteratorError13) {
+						throw _iteratorError13;
 					}
 				}
 			}
 
 			var missing = [];
-			var _iteratorNormalCompletion11 = true;
-			var _didIteratorError11 = false;
-			var _iteratorError11 = undefined;
+			var _iteratorNormalCompletion14 = true;
+			var _didIteratorError14 = false;
+			var _iteratorError14 = undefined;
 
 			try {
-				for (var _iterator11 = C.KEYCODE_RECOMMENDED[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-					var recommended = _step11.value;
+				for (var _iterator14 = C.KEYCODE_RECOMMENDED[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+					var recommended = _step14.value;
 
 					if (!inKeymap.has(recommended)) {
 						missing.push(Keycode.getDefault(recommended).getName());
 					}
 				}
 			} catch (err) {
-				_didIteratorError11 = true;
-				_iteratorError11 = err;
+				_didIteratorError14 = true;
+				_iteratorError14 = err;
 			} finally {
 				try {
-					if (!_iteratorNormalCompletion11 && _iterator11.return) {
-						_iterator11.return();
+					if (!_iteratorNormalCompletion14 && _iterator14.return) {
+						_iterator14.return();
 					}
 				} finally {
-					if (_didIteratorError11) {
-						throw _iteratorError11;
+					if (_didIteratorError14) {
+						throw _iteratorError14;
 					}
 				}
 			}
@@ -29632,7 +31538,7 @@ var Keyboard = function () {
 
 module.exports = Keyboard;
 
-},{"./key":236,"./keycode":237,"const":222}],236:[function(require,module,exports){
+},{"./key":237,"./keycode":238,"const":223,"underscore":222}],237:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -29896,7 +31802,7 @@ var Key = function () {
 
 module.exports = Key;
 
-},{"./keycode":237,"const":222,"utils":262}],237:[function(require,module,exports){
+},{"./keycode":238,"const":223,"utils":263}],238:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -30153,7 +32059,7 @@ var Keycode = function () {
 
 module.exports = Keycode;
 
-},{"const":222}],238:[function(require,module,exports){
+},{"const":223}],239:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -30218,7 +32124,7 @@ var UI = function () {
 
 module.exports = UI;
 
-},{}],239:[function(require,module,exports){
+},{}],240:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -30426,7 +32332,7 @@ var Display = function (_React$Component) {
 
 module.exports = Display;
 
-},{"./key":240,"./keymap":241,"./wiring":242,"classnames":1,"const":222,"react":215,"state/keyboard/keycode":237}],240:[function(require,module,exports){
+},{"./key":241,"./keymap":242,"./wiring":243,"classnames":1,"const":223,"react":215,"state/keyboard/keycode":238}],241:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -30523,7 +32429,7 @@ var Key = function (_React$Component) {
 
 module.exports = Key;
 
-},{"classnames":1,"const":222,"react":215}],241:[function(require,module,exports){
+},{"classnames":1,"const":223,"react":215}],242:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -30609,7 +32515,7 @@ var Keymap = function (_React$Component) {
 
 module.exports = Keymap;
 
-},{"const":222,"react":215}],242:[function(require,module,exports){
+},{"const":223,"react":215}],243:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -30860,7 +32766,7 @@ var Wiring = function (_React$Component) {
 
 module.exports = Wiring;
 
-},{"./wire":243,"classnames":1,"const":222,"react":215}],243:[function(require,module,exports){
+},{"./wire":244,"classnames":1,"const":223,"react":215}],244:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -30932,7 +32838,7 @@ var Wire = function (_React$Component) {
 
 module.exports = Wire;
 
-},{"classnames":1,"const":222,"react":215}],244:[function(require,module,exports){
+},{"classnames":1,"const":223,"react":215}],245:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -30979,7 +32885,7 @@ var Help = function (_React$Component) {
 
 module.exports = Help;
 
-},{"react":215}],245:[function(require,module,exports){
+},{"react":215}],246:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -31086,7 +32992,7 @@ var NumberBox = function (_React$Component) {
 
 module.exports = NumberBox;
 
-},{"react":215}],246:[function(require,module,exports){
+},{"react":215}],247:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -31130,7 +33036,7 @@ var Toggle = function (_React$Component) {
 
 module.exports = Toggle;
 
-},{"react":215}],247:[function(require,module,exports){
+},{"react":215}],248:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -31240,7 +33146,7 @@ var Compile = function (_React$Component) {
 
 module.exports = Compile;
 
-},{"const":222,"files":229,"react":215,"superagent":217,"utils":262}],248:[function(require,module,exports){
+},{"const":223,"files":230,"react":215,"superagent":217,"utils":263}],249:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -31305,7 +33211,7 @@ var Panes = function (_React$Component) {
 
 module.exports = Panes;
 
-},{"./compile":247,"./keymap":252,"./macros":255,"./pins":257,"./settings":258,"./tabs":259,"./wiring":261,"const":222,"react":215}],249:[function(require,module,exports){
+},{"./compile":248,"./keymap":253,"./macros":256,"./pins":258,"./settings":259,"./tabs":260,"./wiring":262,"const":223,"react":215}],250:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -31515,7 +33421,7 @@ var Configure = function (_React$Component) {
 
 module.exports = Configure;
 
-},{"./mods":250,"./selector":251,"const":222,"react":215,"state/keyboard/keycode":237,"ui/elements/numberbox":245}],250:[function(require,module,exports){
+},{"./mods":251,"./selector":252,"const":223,"react":215,"state/keyboard/keycode":238,"ui/elements/numberbox":246}],251:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -31585,24 +33491,6 @@ var Mods = function (_React$Component) {
 							return _this2.props.onChange && _this2.props.onChange(v ? mods | 8 : mods & ~8);
 						} },
 					'GUI'
-				),
-				React.createElement(
-					Toggle,
-					{
-						value: mods & 16,
-						onChange: function onChange(v) {
-							return _this2.props.onChange && _this2.props.onChange(v ? mods | 16 : mods & ~16);
-						} },
-					'HYPER'
-				),
-				React.createElement(
-					Toggle,
-					{
-						value: mods & 32,
-						onChange: function onChange(v) {
-							return _this2.props.onChange && _this2.props.onChange(v ? mods | 32 : mods & ~32);
-						} },
-					'MEH'
 				)
 			);
 		}
@@ -31612,8 +33500,20 @@ var Mods = function (_React$Component) {
 }(React.Component);
 
 module.exports = Mods;
+/* 
+<Toggle
+	value={ mods & 0b010000 }
+	onChange={ v => (this.props.onChange && this.props.onChange(v ? (mods | 0b010000) : (mods & ~0b010000))) }>
+	HYPER
+</Toggle>
+<Toggle
+	value={ mods & 0b100000 }
+	onChange={ v => (this.props.onChange && this.props.onChange(v ? (mods | 0b100000) : (mods & ~0b100000))) }>
+	MEH
+</Toggle> 
+*/
 
-},{"react":215,"ui/elements/toggle":246}],251:[function(require,module,exports){
+},{"react":215,"ui/elements/toggle":247}],252:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -31812,7 +33712,7 @@ var Selector = function (_React$Component) {
 
 module.exports = Selector;
 
-},{"classnames":1,"const":222,"react":215,"utils":262}],252:[function(require,module,exports){
+},{"classnames":1,"const":223,"react":215,"utils":263}],253:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -31909,7 +33809,7 @@ var Keymap = function (_React$Component) {
 
 module.exports = Keymap;
 
-},{"./configure":249,"const":222,"react":215,"ui/elements/numberbox":245}],253:[function(require,module,exports){
+},{"./configure":250,"const":223,"react":215,"ui/elements/numberbox":246}],254:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -32180,7 +34080,7 @@ var Action = function (_React$Component) {
 
 module.exports = Action;
 
-},{"const":222,"react":215,"state/keyboard/keycode":237,"ui/panes/keymap/configure/selector":251}],254:[function(require,module,exports){
+},{"const":223,"react":215,"state/keyboard/keycode":238,"ui/panes/keymap/configure/selector":252}],255:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -32525,7 +34425,7 @@ var Editor = function (_React$Component) {
 
 module.exports = Editor;
 
-},{"./action":253,"classnames":1,"const":222,"react":215}],255:[function(require,module,exports){
+},{"./action":254,"classnames":1,"const":223,"react":215}],256:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -32590,7 +34490,7 @@ var Macros = function (_React$Component) {
 
 module.exports = Macros;
 
-},{"./editor":254,"const":222,"react":215,"ui/elements/numberbox":245}],256:[function(require,module,exports){
+},{"./editor":255,"const":223,"react":215,"ui/elements/numberbox":246}],257:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -32653,7 +34553,7 @@ var Chooser = function (_React$Component) {
 
 module.exports = Chooser;
 
-},{"const":222,"react":215}],257:[function(require,module,exports){
+},{"const":223,"react":215}],258:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -32933,7 +34833,7 @@ var Pins = function (_React$Component) {
 
 module.exports = Pins;
 
-},{"./chooser":256,"const":222,"react":215,"ui/elements/help":244}],258:[function(require,module,exports){
+},{"./chooser":257,"const":223,"react":215,"ui/elements/help":245}],259:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -33170,7 +35070,7 @@ var Settings = function (_React$Component) {
 
 module.exports = Settings;
 
-},{"const":222,"react":215,"ui/elements/help":244,"ui/elements/numberbox":245,"utils":262}],259:[function(require,module,exports){
+},{"const":223,"react":215,"ui/elements/help":245,"ui/elements/numberbox":246,"utils":263}],260:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -33283,7 +35183,7 @@ var Tabs = function (_React$Component) {
 
 module.exports = Tabs;
 
-},{"./tab":260,"const":222,"react":215}],260:[function(require,module,exports){
+},{"./tab":261,"const":223,"react":215}],261:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -33328,7 +35228,7 @@ var Tab = function (_React$Component) {
 
 module.exports = Tab;
 
-},{"classnames":1,"react":215}],261:[function(require,module,exports){
+},{"classnames":1,"react":215}],262:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -33487,7 +35387,7 @@ var Wiring = function (_React$Component) {
 
 module.exports = Wiring;
 
-},{"const":222,"react":215,"ui/elements/help":244,"ui/elements/numberbox":245}],262:[function(require,module,exports){
+},{"const":223,"react":215,"ui/elements/help":245,"ui/elements/numberbox":246}],263:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -33628,4 +35528,4 @@ var Utils = function () {
 
 module.exports = Utils;
 
-},{}]},{},[230]);
+},{}]},{},[231]);
