@@ -40,14 +40,16 @@ class Keycode {
 				case 'MOD': {
 					// Get active mods.
 					const active = [];
-					if (field & 0b000001) active.push('MOD_LCTL');
-					if (field & 0b000010) active.push('MOD_LSFT');
-					if (field & 0b000100) active.push('MOD_LALT');
-					if (field & 0b001000) active.push('MOD_LGUI');
-					if (field & 0b010000) active.push('MOD_HYPR');
-					if (field & 0b100000) active.push('MOD_MEH');
+					if (field & 0b00000001) active.push('MOD_LCTL');
+					if (field & 0b00000010) active.push('MOD_LSFT');
+					if (field & 0b00000100) active.push('MOD_LALT');
+					if (field & 0b00001000) active.push('MOD_LGUI');
+					if (field & 0b00010000) active.push('MOD_RCTL');
+					if (field & 0b00100000) active.push('MOD_RSFT');
+					if (field & 0b01000000) active.push('MOD_RALT');
+					if (field & 0b10000000) active.push('MOD_RGUI');
 					if (active.length === 0) active.push(0);
-					fields.push(active.join(' | '));
+					fields.push(active.join('|'));
 					break;
 				}
 				case 'LAYER': {
@@ -81,14 +83,20 @@ class Keycode {
 				case 'MOD': {
 					// Get active mods.
 					const active = [];
-					if (field & 0b000001) active.push('CTRL');
-					if (field & 0b000010) active.push('SHIFT');
-					if (field & 0b000100) active.push('ALT');
-					if (field & 0b001000) active.push('GUI');
-					if (field & 0b010000) active.push('HYPER');
-					if (field & 0b100000) active.push('MEH');
-					if (active.length === 0) active.push('NONE');
-					fields.push(active.join(' | '));
+					if (field & 0b00000001) active.push('C');
+					if (field & 0b00000010) active.push('S');
+					if (field & 0b00000100) active.push('A');
+					if (field & 0b00001000) active.push('G');
+					if (field & 0b00010000) active.push('rC');
+					if (field & 0b00100000) active.push('rS');
+					if (field & 0b01000000) active.push('rA');
+					if (field & 0b10000000) active.push('rG');
+					if (active.length === 0) {
+						fields.push('NONE')
+					}
+					else {
+						fields.push(active.join(''));
+					}
 					break;
 				}
 				case 'LAYER': {

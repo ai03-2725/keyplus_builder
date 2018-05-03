@@ -72,7 +72,10 @@ class Keyboard {
 		if (!is_yaml) {
 
 			// Import KLE if it exists.
-			if (data) this.importKLE(data);
+			if (data) {
+				this.kle = data;
+				this.importKLE(data);
+			}
 		}
 		// YAML
 		else {
@@ -83,7 +86,7 @@ class Keyboard {
 					'cols' DONE
 					'matrix' DONE 
 					'kle' DONE 
-					'keymap' PARTIAL
+					'keymap' DONE
 
 					TODO: 
 					build simple kle if none is provided
@@ -108,73 +111,133 @@ class Keyboard {
 			}
 			// Layout may or may not have KLE data.
 			if (data['kle']) {
-				// Initialise 
-				this.parseKeyboard(data['kle'], data['keymap'])
-				let index = 0
+				// Initialise
+				this.kle = data['kle'];
+				this.parseKeyboard(data['kle'], data['keymap']);
+				let index = 0;
 				for (const key of this.keys) {
 					for (let layer=0; layer < data['keymap'].length; layer ++) {
-						let keycode = data['keymap'][layer][0][index]
-						// Keycodes
-						if (keycode in _.invert(C.KEYPLUS_KEYCODES)) {
-							keycode = (_.invert(C.KEYPLUS_KEYCODES))[keycode]
-							keycode = Keycode.getDefault(keycode)
-							key.keycodes[layer] = keycode
-						}
-						else {
-							// Layer functions
-							let L = keycode.lastIndexOf('L')
-							if (L > -1) {
-								let func = keycode.substring(0, L+1)
-								let target = Number(keycode.substring(L+1, keycode.length))
+						let keycode = data['keymap'][layer][0][index];
 
-								if (func in _.invert(C.KEYPLUS_LAYER)) {
-									func = (_.invert(C.KEYPLUS_LAYER))[func]
-									keycode = Keycode.getDefault(func+'()')
-									keycode.fields = [target]
-									key.keycodes[layer] = keycode
-								}
+						// Keycodes
+						// TODO: Remove Inverts
+						if (keycode in _.invert(C.KEYPLUS_KEYCODES)) {
+							keycode = (_.invert(C.KEYPLUS_KEYCODES))[keycode];
+							keycode = Keycode.getDefault(keycode);
+							key.keycodes[layer] = keycode;
+						}
+						// Layer functions
+						else {
+
+							let OSM = {
+							    "s_lctrl": 0b00000001,
+							    "s_lsft" : 0b00000010,
+							    "s_lalt" : 0b00000100,
+							    "s_lgui" : 0b00001000,
+							    "s_rctrl": 0b00010000,
+							    "s_rsft" : 0b00100000,
+							    "s_ralt" : 0b01000000,
+							    "s_rgui" : 0b10000000,
 							}
+							let L = keycode.lastIndexOf('L');
+
 							// Mod-keys
-							else if (keycode.includes('-')) {
-								keycode = keycode.split('-')
-								let mods = keycode[0]
-								let target = keycode[1]
-								let first_keycode, mod
+							if (keycode.includes('-') && !keycode.includes('>')) {
+								keycode = keycode.split('-');
+								let mods = keycode[0];
+								let target = keycode[1];
+								let first_keycode, mod;
 								// TODO: Replace with simple bitwise MOD() function
 								for (let index = 0; index < mods.length; index++) {
 									if (mods[index] == 'r') {
-										mod = mods.substring(index, index+2)
+										mod = mods.substring(index, index+2);
 									}
 									else {
-										mod = mods[index]
+										mod = mods[index];
 									}
+									// TODO: Remove Inverts
 									if (mod in _.invert(C.KEYPLUS_MODS)) {
-										mod = (_.invert(C.KEYPLUS_MODS))[mod]
-										let new_keycode = Keycode.getDefault(mod+'()')
+										mod = (_.invert(C.KEYPLUS_MODS))[mod];
+										let new_keycode = Keycode.getDefault(mod+'()');
 										if (keycode.constructor === Array ) {
-											keycode = new_keycode
-											first_keycode = keycode
+											keycode = new_keycode;
+											first_keycode = keycode;
 										}
 										else {
-											keycode.fields = [ new_keycode ]
-											keycode = new_keycode
+											keycode.fields = [ new_keycode ];
+											keycode = new_keycode;
 										}
 									}
-									index++
+									index++;
 								}
-								// Check validity
+								// TODO: Remove Inverts
 								if (target in  _.invert(C.KEYPLUS_KEYCODES) && keycode.constructor !== Array) {
-									target = (_.invert(C.KEYPLUS_KEYCODES))[target]
-									keycode.fields = [ Keycode.getDefault(target) ]
-									key.keycodes[layer] = first_keycode
-
+									target = (_.invert(C.KEYPLUS_KEYCODES))[target];
+									keycode.fields = [ Keycode.getDefault(target) ];
+									key.keycodes[layer] = first_keycode;
 								}
+							}
+							// Tap-keys
+							else if (keycode.includes('>')) {
+								keycode = keycode.split('>');
+								let kc = keycode[0];
+								let target = keycode[1];
+								let L = target.lastIndexOf('L');
+								// Tap>Layer
+								if (L > -1) {
+									let layer_func = target.substring(0, L+1);
+									let l_index = Number(target.substring(L+1, target.length));
+
+									if (layer_func == 'L' && kc in _.invert(C.KEYPLUS_KEYCODES)) {
+										keycode = Keycode.getDefault('LT()');
+										kc = (_.invert(C.KEYPLUS_KEYCODES))[kc];
+										keycode.fields = [l_index, Keycode.getDefault(kc)];
+										key.keycodes[layer] = keycode;
+									}
+								}
+								//Tap>Mod
+								else if (target.includes('-') && kc in _.invert(C.KEYPLUS_KEYCODES)) {
+									keycode = Keycode.getDefault('MT()');
+									target = target.replace('-none', '');
+									let modbit = 0;
+									if (target.includes('rC')) { modbit = modbit | 0b00010000; target.replace(/rC/g, ''); }
+									if (target.includes('rS')) { modbit = modbit | 0b00100000; target.replace(/rS/g, ''); }
+									if (target.includes('rA')) { modbit = modbit | 0b01000000; target.replace(/rA/g, ''); }
+									if (target.includes('rG')) { modbit = modbit | 0b10000000; target.replace(/rG/g, ''); }
+									if (target.includes('C')) { modbit = modbit | 0b00000001; }
+									if (target.includes('S')) { modbit = modbit | 0b00000010; }
+									if (target.includes('A')) { modbit = modbit | 0b00000100; }
+									if (target.includes('G')) { modbit = modbit | 0b00001000; }
+
+									kc = (_.invert(C.KEYPLUS_KEYCODES))[kc];
+									keycode.fields = [modbit, Keycode.getDefault(kc)];
+									key.keycodes[layer] = keycode;
+								}
+							}
+							// Layer functions
+							else if (L > -1) {
+								let func = keycode.substring(0, L+1);
+								let target = Number(keycode.substring(L+1, keycode.length));
+
+								if (func in _.invert(C.KEYPLUS_LAYER)) {
+									func = (_.invert(C.KEYPLUS_LAYER))[func];
+									keycode = Keycode.getDefault(func+'()');
+									keycode.fields = [target];
+									key.keycodes[layer] = keycode;
+								}
+							}
+							else if (keycode in OSM) {
+								console.log(keycode);
+								let modbit = OSM[keycode];
+								keycode = Keycode.getDefault('OSM()');
+								keycode.fields = [ modbit ];
+								key.keycodes[layer] = keycode;
 							}
 						}
 					}
 
-					let row_col = data['matrix'][index]
-					row_col = row_col.split('c')
+					let row_col = data['matrix'][index];
+					row_col = row_col.split('c');
 
 					key._row = Number(row_col[0].substring(1, row_col[0].length));
 					key._col = Number(row_col[1]);
@@ -188,11 +251,11 @@ class Keyboard {
 
 			
 			if (data['rows'].constructor === Array) {
-				this.pins.row = data['rows']
+				this.pins.row = data['rows'];
 				this._rows = data['rows'].length;
 			}
 			if (data['cols'].constructor === Array) {
-				this.pins.col = data['cols']
+				this.pins.col = data['cols'];
 				this._cols = data['cols'].length;
 			}
 			this.updateWiring();

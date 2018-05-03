@@ -29111,7 +29111,7 @@ var keycodes = {
 	'TG()': new Keycode(new Template(['TG', 'LAYER'], 'TG(%1)'), 'tog_L%1', []),
 	'OSL()': new Keycode(new Template(['OSL', 'LAYER'], 'OSL(%1)'), 'stickyL%1', []),
 	'OSM()': new Keycode(new Template(['OSM', 'MOD'], 'OSM(%1)'), 'sticky_%1', []),
-	'MT()': new Keycode(new Template(['MT', 'MOD', 'KEY'], 'MT(%1, %2)'), '%2>%1', []),
+	'MT()': new Keycode(new Template(['MT', 'MOD', 'KEY'], 'MT(%1, %2)'), '%2>%1-none', []),
 	'CTL_T()': new Keycode(new Template(['CTL_T', 'KEY'], 'CTL_T(%1)'), '%1>C-none', []),
 	'SFT_T()': new Keycode(new Template(['SFT_T', 'KEY'], 'SFT_T(%1)'), '%1>S-none', []),
 	'ALT_T()': new Keycode(new Template(['ALT_T', 'KEY'], 'ALT_T(%1)'), '%1>A-none', []),
@@ -29122,7 +29122,7 @@ var keycodes = {
 	'ALL_T()': new Keycode(new Template(['ALL_T', 'KEY'], 'ALL_T(%1)'), '%1>CSAG-none', []),
 	'M()': new Keycode(new Template(['M', 'MACRO'], 'M(%1)'), 'MACRO(%1)', []),
 	// New additions
-	'MOD()': new Keycode(new Template(['MOD', 'MOD', 'KEY'], 'MOD(%1, %2)'), '(%1)-%2', [])
+	'MOD()': new Keycode(new Template(['MOD', 'MOD', 'KEY'], 'MOD(%1, %2)'), '%1-%2', [])
 };
 
 // Generate aliases.
@@ -30135,6 +30135,7 @@ var Main = function (_React$Component) {
 
 					// Build a new keyboard.
 					var keyboard = Keyboard.deserialize(state, deserialized.keyboard);
+					console.log(keyboard);
 
 					state.update({
 						keyboard: keyboard,
@@ -30277,6 +30278,20 @@ var Main = function (_React$Component) {
 			return React.createElement(
 				'div',
 				null,
+				React.createElement(
+					'h3',
+					null,
+					'Upload Keyboard Firmware Builder configuration'
+				),
+				React.createElement(
+					'button',
+					{
+						className: 'block',
+						onClick: this.upload },
+					'Upload'
+				),
+				React.createElement('br', null),
+				React.createElement('br', null),
 				React.createElement(
 					'h3',
 					null,
@@ -30509,7 +30524,10 @@ var Keyboard = function () {
 		if (!is_yaml) {
 
 			// Import KLE if it exists.
-			if (data) this.importKLE(data);
+			if (data) {
+				this.kle = data;
+				this.importKLE(data);
+			}
 		}
 		// YAML
 		else {
@@ -30520,7 +30538,7 @@ var Keyboard = function () {
     		'cols' DONE
     		'matrix' DONE 
     		'kle' DONE 
-    		'keymap' PARTIAL
+    		'keymap' DONE
     			TODO: 
     		build simple kle if none is provided
     		finish keymap parsing
@@ -30549,7 +30567,8 @@ var Keyboard = function () {
 				}
 				// Layout may or may not have KLE data.
 				if (data['kle']) {
-					// Initialise 
+					// Initialise
+					this.kle = data['kle'];
 					this.parseKeyboard(data['kle'], data['keymap']);
 					var index = 0;
 					var _iteratorNormalCompletion = true;
@@ -30562,30 +30581,34 @@ var Keyboard = function () {
 
 							for (var layer = 0; layer < data['keymap'].length; layer++) {
 								var keycode = data['keymap'][layer][0][index];
+
 								// Keycodes
+								// TODO: Remove Inverts
 								if (keycode in _.invert(C.KEYPLUS_KEYCODES)) {
 									keycode = _.invert(C.KEYPLUS_KEYCODES)[keycode];
 									keycode = Keycode.getDefault(keycode);
 									key.keycodes[layer] = keycode;
-								} else {
-									// Layer functions
-									var L = keycode.lastIndexOf('L');
-									if (L > -1) {
-										var func = keycode.substring(0, L + 1);
-										var target = Number(keycode.substring(L + 1, keycode.length));
+								}
+								// Layer functions
+								else {
 
-										if (func in _.invert(C.KEYPLUS_LAYER)) {
-											func = _.invert(C.KEYPLUS_LAYER)[func];
-											keycode = Keycode.getDefault(func + '()');
-											keycode.fields = [target];
-											key.keycodes[layer] = keycode;
-										}
-									}
-									// Mod-keys
-									else if (keycode.includes('-')) {
+										var OSM = {
+											"s_lctrl": 1,
+											"s_lsft": 2,
+											"s_lalt": 4,
+											"s_lgui": 8,
+											"s_rctrl": 16,
+											"s_rsft": 32,
+											"s_ralt": 64,
+											"s_rgui": 128
+										};
+										var L = keycode.lastIndexOf('L');
+
+										// Mod-keys
+										if (keycode.includes('-') && !keycode.includes('>')) {
 											keycode = keycode.split('-');
 											var mods = keycode[0];
-											var _target = keycode[1];
+											var target = keycode[1];
 											var first_keycode = void 0,
 											    mod = void 0;
 											// TODO: Replace with simple bitwise MOD() function
@@ -30595,6 +30618,7 @@ var Keyboard = function () {
 												} else {
 													mod = mods[_index];
 												}
+												// TODO: Remove Inverts
 												if (mod in _.invert(C.KEYPLUS_MODS)) {
 													mod = _.invert(C.KEYPLUS_MODS)[mod];
 													var new_keycode = Keycode.getDefault(mod + '()');
@@ -30608,14 +30632,85 @@ var Keyboard = function () {
 												}
 												_index++;
 											}
-											// Check validity
-											if (_target in _.invert(C.KEYPLUS_KEYCODES) && keycode.constructor !== Array) {
-												_target = _.invert(C.KEYPLUS_KEYCODES)[_target];
-												keycode.fields = [Keycode.getDefault(_target)];
+											// TODO: Remove Inverts
+											if (target in _.invert(C.KEYPLUS_KEYCODES) && keycode.constructor !== Array) {
+												target = _.invert(C.KEYPLUS_KEYCODES)[target];
+												keycode.fields = [Keycode.getDefault(target)];
 												key.keycodes[layer] = first_keycode;
 											}
 										}
-								}
+										// Tap-keys
+										else if (keycode.includes('>')) {
+												keycode = keycode.split('>');
+												var kc = keycode[0];
+												var _target = keycode[1];
+												var _L = _target.lastIndexOf('L');
+												// Tap>Layer
+												if (_L > -1) {
+													var layer_func = _target.substring(0, _L + 1);
+													var l_index = Number(_target.substring(_L + 1, _target.length));
+
+													if (layer_func == 'L' && kc in _.invert(C.KEYPLUS_KEYCODES)) {
+														keycode = Keycode.getDefault('LT()');
+														kc = _.invert(C.KEYPLUS_KEYCODES)[kc];
+														keycode.fields = [l_index, Keycode.getDefault(kc)];
+														key.keycodes[layer] = keycode;
+													}
+												}
+												//Tap>Mod
+												else if (_target.includes('-') && kc in _.invert(C.KEYPLUS_KEYCODES)) {
+														keycode = Keycode.getDefault('MT()');
+														_target = _target.replace('-none', '');
+														var modbit = 0;
+														if (_target.includes('rC')) {
+															modbit = modbit | 16;_target.replace(/rC/g, '');
+														}
+														if (_target.includes('rS')) {
+															modbit = modbit | 32;_target.replace(/rS/g, '');
+														}
+														if (_target.includes('rA')) {
+															modbit = modbit | 64;_target.replace(/rA/g, '');
+														}
+														if (_target.includes('rG')) {
+															modbit = modbit | 128;_target.replace(/rG/g, '');
+														}
+														if (_target.includes('C')) {
+															modbit = modbit | 1;
+														}
+														if (_target.includes('S')) {
+															modbit = modbit | 2;
+														}
+														if (_target.includes('A')) {
+															modbit = modbit | 4;
+														}
+														if (_target.includes('G')) {
+															modbit = modbit | 8;
+														}
+
+														kc = _.invert(C.KEYPLUS_KEYCODES)[kc];
+														keycode.fields = [modbit, Keycode.getDefault(kc)];
+														key.keycodes[layer] = keycode;
+													}
+											}
+											// Layer functions
+											else if (L > -1) {
+													var func = keycode.substring(0, L + 1);
+													var _target2 = Number(keycode.substring(L + 1, keycode.length));
+
+													if (func in _.invert(C.KEYPLUS_LAYER)) {
+														func = _.invert(C.KEYPLUS_LAYER)[func];
+														keycode = Keycode.getDefault(func + '()');
+														keycode.fields = [_target2];
+														key.keycodes[layer] = keycode;
+													}
+												} else if (keycode in OSM) {
+													console.log(keycode);
+													var _modbit = OSM[keycode];
+													keycode = Keycode.getDefault('OSM()');
+													keycode.fields = [_modbit];
+													key.keycodes[layer] = keycode;
+												}
+									}
 							}
 
 							var row_col = data['matrix'][index];
@@ -31863,10 +31958,12 @@ var Keycode = function () {
 							if (field & 2) active.push('MOD_LSFT');
 							if (field & 4) active.push('MOD_LALT');
 							if (field & 8) active.push('MOD_LGUI');
-							if (field & 16) active.push('MOD_HYPR');
-							if (field & 32) active.push('MOD_MEH');
+							if (field & 16) active.push('MOD_RCTL');
+							if (field & 32) active.push('MOD_RSFT');
+							if (field & 64) active.push('MOD_RALT');
+							if (field & 128) active.push('MOD_RGUI');
 							if (active.length === 0) active.push(0);
-							fields.push(active.join(' | '));
+							fields.push(active.join('|'));
 							break;
 						}
 					case 'LAYER':
@@ -31907,14 +32004,19 @@ var Keycode = function () {
 						{
 							// Get active mods.
 							var active = [];
-							if (field & 1) active.push('CTRL');
-							if (field & 2) active.push('SHIFT');
-							if (field & 4) active.push('ALT');
-							if (field & 8) active.push('GUI');
-							if (field & 16) active.push('HYPER');
-							if (field & 32) active.push('MEH');
-							if (active.length === 0) active.push('NONE');
-							fields.push(active.join(' | '));
+							if (field & 1) active.push('C');
+							if (field & 2) active.push('S');
+							if (field & 4) active.push('A');
+							if (field & 8) active.push('G');
+							if (field & 16) active.push('rC');
+							if (field & 32) active.push('rS');
+							if (field & 64) active.push('rA');
+							if (field & 128) active.push('rG');
+							if (active.length === 0) {
+								fields.push('NONE');
+							} else {
+								fields.push(active.join(''));
+							}
 							break;
 						}
 					case 'LAYER':
@@ -33463,7 +33565,7 @@ var Mods = function (_React$Component) {
 						onChange: function onChange(v) {
 							return _this2.props.onChange && _this2.props.onChange(v ? mods | 1 : mods & ~1);
 						} },
-					'CTRL'
+					'CTL'
 				),
 				React.createElement(
 					Toggle,
@@ -33472,7 +33574,7 @@ var Mods = function (_React$Component) {
 						onChange: function onChange(v) {
 							return _this2.props.onChange && _this2.props.onChange(v ? mods | 2 : mods & ~2);
 						} },
-					'SHIFT'
+					'SFT'
 				),
 				React.createElement(
 					Toggle,
@@ -33491,6 +33593,42 @@ var Mods = function (_React$Component) {
 							return _this2.props.onChange && _this2.props.onChange(v ? mods | 8 : mods & ~8);
 						} },
 					'GUI'
+				),
+				React.createElement(
+					Toggle,
+					{
+						value: mods & 16,
+						onChange: function onChange(v) {
+							return _this2.props.onChange && _this2.props.onChange(v ? mods | 16 : mods & ~16);
+						} },
+					'RCTL'
+				),
+				React.createElement(
+					Toggle,
+					{
+						value: mods & 32,
+						onChange: function onChange(v) {
+							return _this2.props.onChange && _this2.props.onChange(v ? mods | 32 : mods & ~32);
+						} },
+					'RSFT'
+				),
+				React.createElement(
+					Toggle,
+					{
+						value: mods & 64,
+						onChange: function onChange(v) {
+							return _this2.props.onChange && _this2.props.onChange(v ? mods | 64 : mods & ~64);
+						} },
+					'RALT'
+				),
+				React.createElement(
+					Toggle,
+					{
+						value: mods & 128,
+						onChange: function onChange(v) {
+							return _this2.props.onChange && _this2.props.onChange(v ? mods | 128 : mods & ~128);
+						} },
+					'RGUI'
 				)
 			);
 		}

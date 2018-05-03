@@ -38,6 +38,7 @@ class Main extends React.Component {
 
 				// Build a new keyboard.
 				const keyboard = Keyboard.deserialize(state, deserialized.keyboard);
+				console.log(keyboard)
 
 				state.update({
 					keyboard: keyboard,
@@ -169,6 +170,13 @@ class Main extends React.Component {
 		const state = this.props.state;
 
 		return <div>
+			<h3>Upload Keyboard Firmware Builder configuration</h3>
+			<button
+				className='block'
+				onClick={ this.upload }>
+				Upload
+			</button>
+			<br/><br/>
 			<h3>Upload keyplus format yaml</h3>
 			<button
 				className='block'

@@ -372,7 +372,7 @@ const keycodes = {
 	'TG()': new Keycode(new Template(['TG', 'LAYER'], 'TG(%1)'), 'tog_L%1', []),
 	'OSL()': new Keycode(new Template(['OSL', 'LAYER'], 'OSL(%1)'), 'stickyL%1', []),
 	'OSM()': new Keycode(new Template(['OSM', 'MOD'], 'OSM(%1)'), 'sticky_%1', []),
-	'MT()': new Keycode(new Template(['MT', 'MOD', 'KEY'], 'MT(%1, %2)'), '%2>%1', []),
+	'MT()': new Keycode(new Template(['MT', 'MOD', 'KEY'], 'MT(%1, %2)'), '%2>%1-none', []),
 	'CTL_T()': new Keycode(new Template(['CTL_T', 'KEY'], 'CTL_T(%1)'), '%1>C-none', []),
 	'SFT_T()': new Keycode(new Template(['SFT_T', 'KEY'], 'SFT_T(%1)'), '%1>S-none', []),
 	'ALT_T()': new Keycode(new Template(['ALT_T', 'KEY'], 'ALT_T(%1)'), '%1>A-none', []),
@@ -383,7 +383,7 @@ const keycodes = {
 	'ALL_T()': new Keycode(new Template(['ALL_T', 'KEY'], 'ALL_T(%1)'), '%1>CSAG-none', []),
 	'M()': new Keycode(new Template(['M', 'MACRO'], 'M(%1)'), 'MACRO(%1)', []),
 	// New additions
-	'MOD()' : new Keycode(new Template(['MOD', 'MOD', 'KEY'], 'MOD(%1, %2)'),  '(%1)-%2', []),
+	'MOD()' : new Keycode(new Template(['MOD', 'MOD', 'KEY'], 'MOD(%1, %2)'),  '%1-%2', []),
 };
 
 // Generate aliases.
