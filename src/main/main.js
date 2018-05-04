@@ -16,45 +16,14 @@ class Main extends React.Component {
 
 		// Bind functions.
 		this.upload = this.upload.bind(this);
-		this.upload_keyplus_yaml = this.upload_keyplus_yaml.bind(this);
 		this.useKLE = this.useKLE.bind(this);
 		this.usePreset = this.usePreset.bind(this);
 	}
 
 	/*
-	 * Upload a QMK Builder configuration.
-	 */
-	upload() {
-		const state = this.props.state;
-
-		// Upload a file.
-		Utils.readFile(contents => {
-			try {
-				// Deserialize the contents.
-				const deserialized = JSON.parse(contents);
-
-				// Ensure the version is correct.
-				if (deserialized.version !== C.VERSION) throw 'version mismatch';
-
-				// Build a new keyboard.
-				const keyboard = Keyboard.deserialize(state, deserialized.keyboard);
-				console.log(keyboard)
-
-				state.update({
-					keyboard: keyboard,
-					screen: C.SCREEN_KEYMAP // Switch to the wiring screen.
-				});
-			} catch (e) {
-				console.error(e);
-				state.error('Invalid configuration');
-			}
-		});
-	}
-
-	/*
 	 * Upload a Keyplus YAML
 	 */
-	upload_keyplus_yaml() {
+	upload() {
 		const state = this.props.state;
 
 		// Upload a file.
@@ -108,10 +77,10 @@ class Main extends React.Component {
 		const state = this.props.state;
 
 		try {
-			const json = parser.parse('[' + state.ui.get('kle', '') + ']'); // Parse the raw data.
+			const data = parser.parse('[' + state.ui.get('kle', '') + ']'); // Parse the raw data.
 
 			// Parse the KLE data.
-			const keyboard = new Keyboard(state, json);
+			const keyboard = new Keyboard(state, data, false);
 			console.log(keyboard)
 
 			// Make sure the data is valid.
@@ -139,25 +108,45 @@ class Main extends React.Component {
 		const state = this.props.state;
 
 		Request
-			.get(C.LOCAL.PRESETS + id + '.json')
+			.get(C.LOCAL.PRESETS + id + '.yaml')
 			.end((err, res) => {
 				if (err) return state.error('Unable to load preset.');
 
 				try {
+					let contents = res.text
+					for (let key in C.KLE_VARS) {
+						let value = C.KLE_VARS[key];
+						let reg = new RegExp(key, "g")
+						contents = contents.replace(reg, value);
+					}
 					// Deserialize the contents.
-					const deserialized = JSON.parse(res.text);
+					const data = YAML.safeLoad(contents);
 
-					// Ensure the version is correct.
-					if (deserialized.version !== C.VERSION) throw 'version mismatch';
+					let devices = Object.keys(data['devices'])
+					// for name in devices would go here
+					let name = devices[0]
+					let layout_name = data['devices'][name]['layout']
 
-					// Build a new keyboard.
-					const keyboard = Keyboard.deserialize(state, deserialized.keyboard);
+					let info = {
+						'name': name,
+						//'id': data['devices'][name]['id'],
+						'mcu': data['devices'][name]['mcu'],
+						//'layout_offset': data['devices'][name]['layout_offset'],
+						'diode': data['devices'][name]['scan_mode']['mode'],
+						'rows': data['devices'][name]['scan_mode']['rows'],
+						'cols': data['devices'][name]['scan_mode']['cols'],
+						'matrix': data['devices'][name]['scan_mode']['matrix_map'],
+						'kle': data['devices'][name]['studio_kle'],
+						'keymap': data['layouts'][layout_name]['layers'],
+					}
 
+					// Build a new keyboard
+					const keyboard = new Keyboard(state, info, true);
 					console.log(keyboard)
 
 					state.update({
 						keyboard: keyboard,
-						screen: C.SCREEN_KEYMAP // Switch to the keymap screen.
+						screen: C.SCREEN_KEYMAP // Switch to the wiring screen.
 					});
 				} catch (e) {
 					console.error(e);
@@ -170,21 +159,14 @@ class Main extends React.Component {
 		const state = this.props.state;
 
 		return <div>
-			<h3>Upload Keyboard Firmware Builder configuration</h3>
+			<h3>Upload keyplus format yaml</h3>
 			<button
 				className='block'
 				onClick={ this.upload }>
 				Upload
 			</button>
 			<br/><br/>
-			<h3>Upload keyplus format yaml</h3>
-			<button
-				className='block'
-				onClick={ this.upload_keyplus_yaml }>
-				Upload
-			</button>
-			<br/><br/>
-			<h3>Or import from keyboard-layout-editor.com</h3>
+			<h3>Import from keyboard-layout-editor.com (keyboard makers only)</h3>
 			<textarea
 				className='kle'
 				placeholder='Paste layout here...'
@@ -225,4 +207,65 @@ module.exports = Main;
 	Upload
 </button>
 <br/><br/>
+*/
+
+/*
+	upload() {
+		const state = this.props.state;
+
+		// Upload a file.
+		Utils.readFile(contents => {
+			try {
+				// Deserialize the contents.
+				const deserialized = JSON.parse(contents);
+
+				// Ensure the version is correct.
+				if (deserialized.version !== C.VERSION) throw 'version mismatch';
+
+				// Build a new keyboard.
+				const keyboard = Keyboard.deserialize(state, deserialized.keyboard);
+				console.log(keyboard)
+
+				state.update({
+					keyboard: keyboard,
+					screen: C.SCREEN_KEYMAP // Switch to the wiring screen.
+				});
+			} catch (e) {
+				console.error(e);
+				state.error('Invalid configuration');
+			}
+		});
+	}
+
+
+	usePreset(id) {
+			const state = this.props.state;
+
+			Request
+				.get(C.LOCAL.PRESETS + id + '.json')
+				.end((err, res) => {
+					if (err) return state.error('Unable to load preset.');
+
+					try {
+						// Deserialize the contents.
+						const deserialized = JSON.parse(res.text);
+
+						// Ensure the version is correct.
+						if (deserialized.version !== C.VERSION) throw 'version mismatch';
+
+						// Build a new keyboard.
+						const keyboard = Keyboard.deserialize(state, deserialized.keyboard);
+
+						console.log(keyboard)
+
+						state.update({
+							keyboard: keyboard,
+							screen: C.SCREEN_KEYMAP // Switch to the keymap screen.
+						});
+					} catch (e) {
+						console.error(e);
+						state.error('Invalid configuration');
+					}
+				});
+		}
 */

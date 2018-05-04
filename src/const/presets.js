@@ -1,15 +1,17 @@
 module.exports = {
 	'gh60-ansi': 'GH60 (ANSI)',
 	'gh60satan-ansi': 'GH60 Satan (ANSI)',
-	'alps64-aek': 'Alps64 (AEK)',
-	'minivan-std': 'MiniVan (Standard)',
-	'minivan-arrow': 'MiniVan (Arrow)',
-	's60x-rgb-ansi': 'S60-X RGB (ANSI)',
-	's60x-rgb-iso': 'S60-X RGB (ISO)',
-	's60x-rgb-generic': 'S60-X RGB (Generic)',
-	'planck': 'Planck',
-	'jd45-default': 'JD45',
-	'bantam-pcb': 'Bantam44 (PCB)',
-	'alps44': 'Alps44',
-	'miuni32-rgb-standard': 'Miuni32 RGB (Standard)'
+	'do60-ansi' : 'DO60 (ANSI)',
+	'dz60-ansi' : 'DZ60 (ANSI)',
+	'e6v2-ansi': 'E6V2 (ANSI)',
+	'e6v2-hhkb': 'E6V2 (HHKB)',
+	'clueboard66-rev2-ansi' : 'Clueboard 66 (Rev 2 ANSI)',
+	'contra-grid' : 'Contra (GRID)',
+	'planck-rev4-grid': 'Planck (Rev4 GRID)',
+	'jd45': 'JD45',
+
+
+	// Future support when 32u2 is supported
+	//'alps64-aek': 'Alps64 (AEK)',
+	//'alps44': 'Alps44',
 };

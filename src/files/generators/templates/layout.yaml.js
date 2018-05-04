@@ -11,8 +11,10 @@ report_mode : auto_nkro # options: auto_nkro, 6kro, nkro
 devices:
   %kb_name%:
     id: 0
+    %mcu%
     layout: default
     layout_offset: 0
+    %kle%
     scan_mode:
       mode: %diode_direction% # options:  col_row, row_col, pins, none
       rows: [%row_pins%]

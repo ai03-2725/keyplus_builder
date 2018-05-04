@@ -103,12 +103,6 @@ class Settings extends React.Component {
 				The number of backlight levels.
 			</Help>
 			<div style={{ height: '1.5rem' }}/>
-			Save your layout.
-			<div style={{ height: '0.5rem' }}/>
-			<button onClick={ this.save }>
-				Save Configuration
-			</button>
-			<div style={{ height: '1.5rem' }}/>
 			Check errors and warnings.
 			<div style={{ height: '0.5rem' }}/>
 			<div className='pane-settings-list'>
@@ -120,3 +114,14 @@ class Settings extends React.Component {
 }
 
 module.exports = Settings;
+
+/*
+
+<div style={{ height: '1.5rem' }}/>
+Save your layout.
+<div style={{ height: '0.5rem' }}/>
+<button onClick={ this.save }>
+	Save Configuration
+</button>
+*/
+			

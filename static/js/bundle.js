@@ -28664,7 +28664,8 @@ var C = {
 		'y:': '"y":',
 		'r:': '"r":',
 		'w:': '"w":',
-		'h:': '"h":'
+		'h:': '"h":',
+		'a:': '"a":'
 	},
 
 	// Keycodes.
@@ -28718,7 +28719,7 @@ module.exports = C;
 },{"./keycodes":224,"./local":225,"./presets":226}],224:[function(require,module,exports){
 'use strict';
 
-var _keyplus_keycodes;
+var _keyplus_keycodes, _display_functions;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -29092,6 +29093,7 @@ var keycodes = {
 	'KC_MEH': new Keycode('KC_MEH', 'MEH', []),
 
 	// Modifiers.
+	// Depreciated QMK functions
 	'LCTL()': new Keycode(new Template(['LCTL', 'KEY'], 'LCTL(%1)'), 'LCTRL + %1', []),
 	'LSFT()': new Keycode(new Template(['LSFT', 'KEY'], 'LSFT(%1)'), 'LSHIFT + %1', []),
 	'LALT()': new Keycode(new Template(['LALT', 'KEY'], 'LALT(%1)'), 'LALT + %1', []),
@@ -29104,14 +29106,6 @@ var keycodes = {
 	'MEH()': new Keycode(new Template(['MEH', 'KEY'], 'MEH(%1)'), 'MEH + %1', []),
 	'LCAG()': new Keycode(new Template(['LCAG', 'KEY'], 'LCAG(%1)'), 'LCAG + %1', []),
 	'ALTG()': new Keycode(new Template(['ALTG', 'KEY'], 'ALTG(%1)'), 'ALTGR + %1', []),
-	'LT()': new Keycode(new Template(['LT', 'LAYER', 'KEY'], 'LT(%1, %2)'), '%2>L%1', []),
-	'TO()': new Keycode(new Template(['TO', 'LAYER'], 'TO(%1)'), 't_L%1', []),
-	'MO()': new Keycode(new Template(['MO', 'LAYER'], 'MO(%1)'), 'L%1', []),
-	'DF()': new Keycode(new Template(['DF', 'LAYER'], 'DF(%1)'), 'DF(%1)', []),
-	'TG()': new Keycode(new Template(['TG', 'LAYER'], 'TG(%1)'), 'tog_L%1', []),
-	'OSL()': new Keycode(new Template(['OSL', 'LAYER'], 'OSL(%1)'), 'stickyL%1', []),
-	'OSM()': new Keycode(new Template(['OSM', 'MOD'], 'OSM(%1)'), 'sticky_%1', []),
-	'MT()': new Keycode(new Template(['MT', 'MOD', 'KEY'], 'MT(%1, %2)'), '%2>%1-none', []),
 	'CTL_T()': new Keycode(new Template(['CTL_T', 'KEY'], 'CTL_T(%1)'), '%1>C-none', []),
 	'SFT_T()': new Keycode(new Template(['SFT_T', 'KEY'], 'SFT_T(%1)'), '%1>S-none', []),
 	'ALT_T()': new Keycode(new Template(['ALT_T', 'KEY'], 'ALT_T(%1)'), '%1>A-none', []),
@@ -29120,6 +29114,16 @@ var keycodes = {
 	'MEH_T()': new Keycode(new Template(['MEH_T', 'KEY'], 'MEH_T(%1)'), '%1>CSA-none', []),
 	'LCAG_T()': new Keycode(new Template(['LCAG_T', 'KEY'], 'LCAG_T(%1)'), '%1>CAG-none', []),
 	'ALL_T()': new Keycode(new Template(['ALL_T', 'KEY'], 'ALL_T(%1)'), '%1>CSAG-none', []),
+
+	// Still active
+	'LT()': new Keycode(new Template(['LT', 'LAYER', 'KEY'], 'LT(%1, %2)'), '%2>L%1', []),
+	'TO()': new Keycode(new Template(['TO', 'LAYER'], 'TO(%1)'), 'set_L%1', []),
+	'MO()': new Keycode(new Template(['MO', 'LAYER'], 'MO(%1)'), 'L%1', []),
+	'DF()': new Keycode(new Template(['DF', 'LAYER'], 'DF(%1)'), 'DF(%1)', []),
+	'TG()': new Keycode(new Template(['TG', 'LAYER'], 'TG(%1)'), 'tog_L%1', []),
+	'OSL()': new Keycode(new Template(['OSL', 'LAYER'], 'OSL(%1)'), 'stickyL%1', []),
+	'OSM()': new Keycode(new Template(['OSM', 'MOD'], 'OSM(%1)'), 'sticky%1', []),
+	'MT()': new Keycode(new Template(['MT', 'MOD', 'KEY'], 'MT(%1, %2)'), '%2>%1-none', []),
 	'M()': new Keycode(new Template(['M', 'MACRO'], 'M(%1)'), 'MACRO(%1)', []),
 	// New additions
 	'MOD()': new Keycode(new Template(['MOD', 'MOD', 'KEY'], 'MOD(%1, %2)'), '%1-%2', [])
@@ -29174,15 +29178,7 @@ var categories = {
 		//'RGB_TOG', 'RGB_MOD', 'RGB_HUI', 'RGB_HUD', 'RGB_SAI', 'RGB_SAD', 'RGB_VAI', 'RGB_VAD'
 	],
 
-	'FN': ['KC_GESC', '',
-
-	//'LCTL()', 'LSFT()', 'LALT()', 'LGUI()',  'RCTL()', 'RSFT()', 'RALT()', 'RGUI()', '',
-
-	'MOD()', 'OSM()', '',
-
-	//'ALTG()', 'LCAG()', 'MEH()', 'HYPR()', '',
-
-	'TO()', 'MO()', 'TG()', 'OSL()', '', 'LT()', 'MT()', '']
+	'FN': ['KC_GESC', '', 'MOD()', 'OSM()', 'MT()', '', 'TO()', 'MO()', 'TG()', 'OSL()', 'LT()', '', 'KC_MS_U', 'KC_MS_D', 'KC_MS_L', 'KC_MS_R', '', 'KC_WH_U', 'KC_WH_D', 'KC_WH_L', 'KC_WH_R', '', 'KC_BTN1', 'KC_BTN2', 'KC_BTN3', 'KC_BTN4', 'KC_BTN5', '']
 };
 
 // Generate reverse categories.
@@ -29535,14 +29531,14 @@ var keyplus_layers = {
 	"MEH": "CSA",
 	"HYPR": "CSAG",
 
-	"OSM(MOD_LSFT)": "s_lsft",
-	"OSM(MOD_LCTL)": "s_lctrl",
-	"OSM(MOD_LALT)": "s_lalt",
-	"OSM(MOD_LGUI)": "s_lgui",
-	"OSM(MOD_RCTL)": "s_rctrl",
-	"OSM(MOD_RSFT)": "s_rsft",
-	"OSM(MOD_RALT)": "s_ralt",
-	"OSM(MOD_RGUI)": "s_rgui"
+	"OSM(S)": "s_lsft",
+	"OSM(C)": "s_lctrl",
+	"OSM(A)": "s_lalt",
+	"OSM(G)": "s_lgui",
+	"OSM(rC)": "s_rctrl",
+	"OSM(rS)": "s_rsft",
+	"OSM(rA)": "s_ralt",
+	"OSM(rG)": "s_rgui"
 };
 
 var keyplus_double_param = {
@@ -29578,58 +29574,36 @@ var keyplus_modtap = {
 };
 
 var legacy_mods = {
-	"MOD_LSFT": "S",
-	"MOD_LCTL": "C",
-	"MOD_LALT": "A",
-	"MOD_LGUI": "G",
-	"MOD_RCTL": "rC",
-	"MOD_RSFT": "rS",
-	"MOD_RALT": "rA",
-	"MOD_RGUI": "rG",
-	"MOD_MEH": "CSA",
-	"MOD_HYPR": "CSAG"
+	"S": "S",
+	"C": "C",
+	"A": "A",
+	"G": "G",
+	"rC": "rC",
+	"rS": "rS",
+	"rA": "rA",
+	"rG": "rG"
+	//"MOD_MEH"  : "CSA",
+	//"MOD_HYPR" : "CSAG",
 };
 
-var display_functions = {
-
+var display_functions = (_display_functions = {
+	//Grave-esc
 	'KC_GESC': '`esc',
-	'KC_BTN1': 'btn1',
-	'KC_BTN2': 'btn2',
-	'KC_BTN3': 'btn3',
-	'KC_BTN4': 'btn4',
-	'KC_BTN5': 'btn5',
-	'LCTL()': 'C-',
-	'LSFT()': 'S-',
-	'LALT()': 'A-',
-	'LGUI()': 'G-',
-	'RCTL()': 'rC-',
-	'RSFT()': 'rS-',
-	'RALT()': 'rA-',
-	'RGUI()': 'rG-',
-	'HYPR()': 'HYPR-',
-	'MEH()': 'MEH-',
-	'LCAG()': 'CAG-',
-	'ALTG()': 'rCrA-',
-	'LT()': 'Tap>L',
-	'TO()': 'set_L',
-	'MO()': 'L',
-	'DF()': 'L',
-	'TG()': 'tog_L',
-	'OSL()': 'stickyL',
-	'OSM()': 'stickyMod',
-	'MT()': 'Tap>Mod',
-	'CTL_T()': 'Tap>C-',
-	'SFT_T()': 'Tap>S-',
-	'ALT_T()': 'Tap>A-',
-	'GUI_T()': 'Tap>G-',
-	'C_S_T()': 'Tap>CS-',
-	'MEH_T()': 'Tap>MEH-',
-	'LCAG_T()': 'Tap>CAG-',
-	'ALL_T()': 'Tap>HYPR-',
-	'M()': 'M()',
-
-	'MOD()': 'Mod-Keys'
-};
+	//Mouse keys
+	"KC_MS_U": "ms_u",
+	"KC_MS_D": "ms_d",
+	"KC_MS_L": "ms_l",
+	"KC_MS_R": "ms_r",
+	"KC_BTN1": "btn1",
+	"KC_BTN2": "btn2",
+	"KC_BTN3": "btn3",
+	"KC_BTN4": "btn4",
+	"KC_BTN5": "btn5",
+	"KC_WH_U": "wh_u",
+	"KC_WH_D": "wh_d",
+	"KC_WH_L": "wh_l",
+	"KC_WH_R": "wh_r"
+}, _defineProperty(_display_functions, 'KC_BTN1', 'btn1'), _defineProperty(_display_functions, 'KC_BTN2', 'btn2'), _defineProperty(_display_functions, 'KC_BTN3', 'btn3'), _defineProperty(_display_functions, 'KC_BTN4', 'btn4'), _defineProperty(_display_functions, 'KC_BTN5', 'btn5'), _defineProperty(_display_functions, 'LCTL()', 'C-'), _defineProperty(_display_functions, 'LSFT()', 'S-'), _defineProperty(_display_functions, 'LALT()', 'A-'), _defineProperty(_display_functions, 'LGUI()', 'G-'), _defineProperty(_display_functions, 'RCTL()', 'rC-'), _defineProperty(_display_functions, 'RSFT()', 'rS-'), _defineProperty(_display_functions, 'RALT()', 'rA-'), _defineProperty(_display_functions, 'RGUI()', 'rG-'), _defineProperty(_display_functions, 'HYPR()', 'HYPR-'), _defineProperty(_display_functions, 'MEH()', 'MEH-'), _defineProperty(_display_functions, 'LCAG()', 'CAG-'), _defineProperty(_display_functions, 'ALTG()', 'rCrA-'), _defineProperty(_display_functions, 'LT()', 'Tap>L'), _defineProperty(_display_functions, 'TO()', 'set_L'), _defineProperty(_display_functions, 'MO()', 'L'), _defineProperty(_display_functions, 'DF()', 'L'), _defineProperty(_display_functions, 'TG()', 'tog_L'), _defineProperty(_display_functions, 'OSL()', 'stickyL'), _defineProperty(_display_functions, 'OSM()', 'stickyMod'), _defineProperty(_display_functions, 'MT()', 'Tap>Mod'), _defineProperty(_display_functions, 'CTL_T()', 'Tap>C-'), _defineProperty(_display_functions, 'SFT_T()', 'Tap>S-'), _defineProperty(_display_functions, 'ALT_T()', 'Tap>A-'), _defineProperty(_display_functions, 'GUI_T()', 'Tap>G-'), _defineProperty(_display_functions, 'C_S_T()', 'Tap>CS-'), _defineProperty(_display_functions, 'MEH_T()', 'Tap>MEH-'), _defineProperty(_display_functions, 'LCAG_T()', 'Tap>CAG-'), _defineProperty(_display_functions, 'ALL_T()', 'Tap>HYPR-'), _defineProperty(_display_functions, 'M()', 'M()'), _defineProperty(_display_functions, 'MOD()', 'Mod-Keys'), _display_functions);
 
 module.exports = {
 
@@ -29661,17 +29635,18 @@ module.exports={
 module.exports = {
 	'gh60-ansi': 'GH60 (ANSI)',
 	'gh60satan-ansi': 'GH60 Satan (ANSI)',
-	'alps64-aek': 'Alps64 (AEK)',
-	'minivan-std': 'MiniVan (Standard)',
-	'minivan-arrow': 'MiniVan (Arrow)',
-	's60x-rgb-ansi': 'S60-X RGB (ANSI)',
-	's60x-rgb-iso': 'S60-X RGB (ISO)',
-	's60x-rgb-generic': 'S60-X RGB (Generic)',
-	'planck': 'Planck',
-	'jd45-default': 'JD45',
-	'bantam-pcb': 'Bantam44 (PCB)',
-	'alps44': 'Alps44',
-	'miuni32-rgb-standard': 'Miuni32 RGB (Standard)'
+	'do60-ansi': 'DO60 (ANSI)',
+	'dz60-ansi': 'DZ60 (ANSI)',
+	'e6v2-ansi': 'E6V2 (ANSI)',
+	'e6v2-hhkb': 'E6V2 (HHKB)',
+	'clueboard66-rev2-ansi': 'Clueboard 66 (Rev 2 ANSI)',
+	'contra-grid': 'Contra (GRID)',
+	'planck-rev4-grid': 'Planck (Rev4 GRID)',
+	'jd45': 'JD45'
+
+	// Future support when 32u2 is supported
+	//'alps64-aek': 'Alps64 (AEK)',
+	//'alps44': 'Alps44',
 };
 
 },{}],227:[function(require,module,exports){
@@ -29750,155 +29725,162 @@ var KeyplusY = function (_Generator) {
 		value: function fillTemplate() {
 			var keyboard = this.keyboard;
 
+			var mcu = '';
+			switch (keyboard.controller) {
+				case C.CONTROLLER_ATMEGA32U2:
+					mcu = 'mcu: atmega32u2';break;
+				case C.CONTROLLER_ATMEGA32U4:
+					mcu = 'mcu: atmega32u4';break;
+				case C.CONTROLLER_AT90USB1286:
+					mcu = 'mcu: at90usb1286';break;
+				case C.CONTROLLER_ATXMEGA32A4U:
+					mcu = 'mcu: atxmega32a4u';break;
+			}
+
+			var kle = '';
+			var row_ref = [];
+			var ref_ind = 0;
+
+			kle = keyboard.kle;
+			var kle_string = '      ';
+			var row_count = -1;
+			for (var x = 0; x < kle.length; x++) {
+				var row = kle[x];
+				for (var y = 0; y < row.length; y++) {
+					if (typeof row[y] === 'string') {
+						row_count++;
+					}
+				}
+				row_ref.push(row_count);
+				row = JSON.stringify(row);
+				kle_string += row + ',\n      ';
+			}
+			kle = 'studio_kle: [\n' + kle_string.substring(0, kle_string.length - 2) + ']';
+
 			// Generate the keymaps.
 			var keymaps = '';
 			var explicit = '';
 			for (var layer = 0; layer < C.KEYMAP_MAX_LAYERS; layer++) {
 				var layerMap = '      [ # Layer ' + String(layer) + '\n        [\n          ';
-				for (var row = 0; row < keyboard.rows; row++) {
-					for (var col = 0; col < keyboard.cols; col++) {
-						var key = keyboard.wiring[row + ',' + col];
-						if (!key || !key.length) continue;
-						var keycode = key[0].keycodes[layer].getCode();
-						// Functions
-						if (keycode.includes('(') && keycode.endsWith(')')) {
-							// One-Shot Mods
-							if (keycode in C.KEYPLUS_MODS) {
-								keycode = '\'' + C.KEYPLUS_MODS[keycode] + '\'';
-							} else {
-								// Check Params
-								var func_l = keycode.split('(');
-								var func = func_l[0];
-								var param = func_l[func_l.length - 1];
-								param = param.substring(0, param.length - (func_l.length - 1));
-								var param_l = param.split(',');
-								// LAYER_FUNC(LAYER)
-								if (func in C.KEYPLUS_LAYER) {
-									keycode = '\'' + C.KEYPLUS_LAYER[func] + param + '\'';
+				for (var keyIndex = 0; keyIndex < keyboard.keys.length; keyIndex++) {
+
+					var key = keyboard.keys[keyIndex];
+
+					//if (!key || !key.length) continue;
+					var keycode = key.keycodes[layer].getCode();
+
+					// Functions
+					if (keycode.includes('(') && keycode.endsWith(')')) {
+
+						// One-Shot Mods
+						if (keycode in C.KEYPLUS_MODS) {
+
+							keycode = '\'' + C.KEYPLUS_MODS[keycode] + '\'';
+						} else {
+							// Check Params
+							var func_l = keycode.split('(');
+							var func = func_l[0];
+							var param = func_l[func_l.length - 1];
+							param = param.substring(0, param.length - (func_l.length - 1));
+							var param_l = param.split(',');
+
+							// LAYER_FUNC(LAYER)
+							if (func in C.KEYPLUS_LAYER) {
+
+								keycode = '\'' + C.KEYPLUS_LAYER[func] + param + '\'';
+							}
+							// MOD-KEYS
+							else if (func == 'MOD') {
+
+									var first = param_l[0].replace(/ /g, '');
+									var second = param_l[1].replace(/ /g, '');
+
+									if (second in C.KEYPLUS_KEYCODES) {
+										keycode = C.KEYPLUS_KEYCODES[second];
+									} else keycode = '____';
+
+									keycode = '\'' + first + '-' + keycode + '\'';
 								}
-								// MOD(MOD(KC)))
-								else if (func in C.KEYPLUS_MODS && param in C.KEYPLUS_KEYCODES && func_l.length > 1) {
-										keycode = '';
-										var len = func_l.length - 1;
-										for (var ind = 0; ind < len; ind++) {
-											var fn = func_l[ind];
-											if (fn in C.KEYPLUS_MODS) {
-												keycode += C.KEYPLUS_MODS[fn];
+								// TAP>LAYER & TAP>MOD
+								else if (func in C.KEYPLUS_DOUBLE && param_l.length == 2) {
+
+										var _first = param_l[0].replace(/ /g, '');
+										var _second = param_l[1].replace(/ /g, '');
+
+										// MT(CSAG, kc)
+										if (func == 'MT' && _second in C.KEYPLUS_KEYCODES) {
+
+											var tap = C.KEYPLUS_KEYCODES[_second];
+											var hold = _first + '-none';
+											keycode = '\'' + tap + '>' + hold + '\'';
+											// temp Code for explicit definition of 'tap>hold'
+											if (explicit.length == 0) {
+												explicit += '\nkeycodes:\n';
 											}
+											explicit += '  ' + keycode + ':\n    keycode: hold\n    delay: 200\n';
+											explicit += '    tap_key: ' + tap + '\n';
+											explicit += '    hold_key: ' + hold + '\n\n';
 										}
-										keycode = '\'' + keycode + '-' + C.KEYPLUS_KEYCODES[param] + '\'';
-									}
-									// MOD_T(KC)
-									else if (func in C.KEYPLUS_MODTAP && param in C.KEYPLUS_KEYCODES) {
-											keycode = '\'' + C.KEYPLUS_KEYCODES[param] + '>' + C.KEYPLUS_MODTAP[func] + '-none' + '\'';
-										}
-										// LT(LAYER,kc), MT(MOD, kc), LM(LAYER, MOD)
-										else if (func in C.KEYPLUS_DOUBLE && param_l.length == 2) {
-												var first = param_l[0].replace(/ /g, '');
-												var second = param_l[1].replace(/ /g, '');
+										// LT(LAYER, kc)
+										else if (func == 'LT' && _second in C.KEYPLUS_KEYCODES) {
 
-												// MT(MOD | MOD, kc)
-												if (func == 'MT' && first.includes('|') && second in C.KEYPLUS_KEYCODES) {
-													var first_l = first.split('|');
-													first = '';
-													for (var _ind = 0; _ind < first_l.length; _ind++) {
-														var mod = first_l[_ind].replace(/ /g, '');
-														if (mod in C.LEGACY_MODS) {
-															first += C.LEGACY_MODS[mod];
-														}
-													}
-
-													var tap = C.KEYPLUS_KEYCODES[second];
-													var hold = first + '-none';
-													keycode = '\'' + tap + '>' + hold + '\'';
-													// temp Code for explicit definition of 'tap>hold'
-													if (explicit.length == 0) {
-														explicit += '\nkeycodes:\n';
-													}
-													explicit += '  ' + keycode + ':\n    keycode: hold\n    delay: 200\n';
-													explicit += '    tap_key: ' + tap + '\n';
-													explicit += '    hold_key: ' + hold + '\n\n';
+												var _tap = C.KEYPLUS_KEYCODES[_second];
+												var _hold = C.KEYPLUS_DOUBLE[func];
+												keycode = '\'' + _tap + '>' + _hold + _first + '\'';
+												// temp Code for explicit definition of 'tap>hold'
+												if (explicit.length == 0) {
+													explicit += '\nkeycodes:\n';
 												}
-
-												// MT(MOD, kc)
-												if (func == 'MT' && first in C.LEGACY_MODS && second in C.KEYPLUS_KEYCODES) {
-
-													var _tap = C.KEYPLUS_KEYCODES[second];
-													var _hold = C.LEGACY_MODS[first] + '-none';
-													keycode = '\'' + _tap + '>' + _hold + '\'';
-													// temp Code for explicit definition of 'tap>hold'
-													if (explicit.length == 0) {
-														explicit += '\nkeycodes:\n';
-													}
-													explicit += '  ' + keycode + ':\n    keycode: hold\n    delay: 200\n';
-													explicit += '    tap_key: ' + _tap + '\n';
-													explicit += '    hold_key: ' + _hold + '\n\n';
-												}
-												// LT(LAYER, kc)
-												else if (func == 'LT' && second in C.KEYPLUS_KEYCODES) {
-
-														var _tap2 = C.KEYPLUS_KEYCODES[second];
-														var _hold2 = C.KEYPLUS_DOUBLE[func];
-														keycode = '\'' + _tap2 + '>' + _hold2 + first + '\'';
-														// temp Code for explicit definition of 'tap>hold'
-														if (explicit.length == 0) {
-															explicit += '\nkeycodes:\n';
-														}
-														explicit += '  ' + keycode + ':\n    keycode: hold\n    delay: 200\n';
-														explicit += '    tap_key: ' + _tap2 + '\n';
-														explicit += '    hold_key: ' + _hold2 + '\n\n';
-													}
-												// LM(LAYER, MOD)
-												//else if (second in C.LEGACY_MODS) {
-												//keycode = '\'' + C.LEGACY_MODS[second]+'-none' + '~' + C.KEYPLUS_DOUBLE[func] + first + '\''
-												//}
-											} else {
-												keycode = '____';
-											}
+												explicit += '  ' + keycode + ':\n    keycode: hold\n    delay: 200\n';
+												explicit += '    tap_key: ' + _tap + '\n';
+												explicit += '    hold_key: ' + _hold + '\n\n';
+											} else keycode = '____';
+									} else keycode = '____';
+						}
+					}
+					// Keycodes
+					else {
+							if (keycode in C.KEYPLUS_KEYCODES) {
+								keycode = '\'' + C.KEYPLUS_KEYCODES[keycode] + '\'';
 							}
 						}
-						// Keycodes
-						else {
-								if (keycode in C.KEYPLUS_KEYCODES) {
-									keycode = '\'' + C.KEYPLUS_KEYCODES[keycode] + '\'';
-								}
-							}
-						layerMap += keycode + ', ';
+					layerMap += keycode + ', ';
+
+					if (keyIndex == row_ref[ref_ind]) {
+						layerMap += '\n          ';
+						ref_ind++;
 					}
-					layerMap += '\n          ';
 				}
+				ref_ind = 0;
 				layerMap = layerMap.substring(0, layerMap.length - 2) + ']\n      ],\n';
 				keymaps += layerMap;
 			}
 			keymaps = keymaps.substring(0, keymaps.length - 3);
 
-			// Generate the matrix
-			var matrix = '';
-			var rowLength = String(keyboard.rows).length;
-			var colLength = String(keyboard.cols).length;
-			var space = ' '.repeat(rowLength + colLength + 3);
+			row_ref.pop();
+			var matrix = '        ';
+			for (var _keyIndex = 0; _keyIndex < keyboard.keys.length; _keyIndex++) {
+				var _key = keyboard.keys[_keyIndex];
 
-			for (var _row = 0; _row < keyboard.rows; _row++) {
-				var rowString = '';
-				for (var _col = 0; _col < keyboard.cols; _col++) {
-					if (keyboard.wiring[_row + ',' + _col]) {
-						rowString += 'r' + String(_row) + 'c' + String(_col) + ', ';
-					} else {
-						rowString += space;
-					}
+				matrix += 'r' + String(_key.row) + 'c' + String(_key.col) + ', ';
+
+				if (_keyIndex == row_ref[ref_ind]) {
+					matrix += '\n        ';
+					ref_ind++;
 				}
-				matrix += '        ' + rowString + '\n';
 			}
-			matrix = matrix.substring(0, matrix.length - 4);
+			console.log(matrix);
 
 			return {
 				'kb_name': keyboard.settings.name,
+				'mcu': mcu,
 				'explicit_defs': explicit,
 				'layout': keymaps,
 				'matrix': matrix,
 				'diode_direction': keyboard.settings.diodeDirection === C.DIODE_COL2ROW ? 'col_row' : 'row_col',
 				'row_pins': keyboard.pins.row.join(', '),
-				'col_pins': keyboard.pins.col.join(', ')
+				'col_pins': keyboard.pins.col.join(', '),
+				'kle': kle
 			};
 		}
 	}]);
@@ -29908,10 +29890,134 @@ var KeyplusY = function (_Generator) {
 
 module.exports = KeyplusY;
 
+/*
+// old MOD(MOD(KC)))
+else if (func in C.KEYPLUS_MODS && param in C.KEYPLUS_KEYCODES && func_l.length > 1) {
+
+	keycode = '';
+	let len = func_l.length-1;
+	for (let ind = 0; ind < len; ind ++) {
+		let fn = func_l[ind];
+		if (fn in C.KEYPLUS_MODS) { keycode += C.KEYPLUS_MODS[fn]; }
+	}
+
+	keycode = '\'' + keycode + '-' + C.KEYPLUS_KEYCODES[param] + '\'';
+}
+// MOD_T(KC)
+else if (func in C.KEYPLUS_MODTAP && param in C.KEYPLUS_KEYCODES) {
+	keycode = '\'' + C.KEYPLUS_KEYCODES[param] + '>' + C.KEYPLUS_MODTAP[func]+'-none' + '\''
+}
+*/
+
+/*
+for (let row = 0; row < keyboard.rows; row ++) {
+	for (let col = 0; col < keyboard.cols; col ++) {
+
+		const key = keyboard.wiring[row + ',' + col];
+		if (!key || !key.length) continue;
+		let keycode = key[0].keycodes[layer].getCode()
+
+		// Functions
+		if (keycode.includes('(') && keycode.endsWith(')')) {
+
+			// One-Shot Mods
+			if (keycode in C.KEYPLUS_MODS) {
+
+				keycode = '\'' + C.KEYPLUS_MODS[keycode] + '\'';
+			}
+			else {
+				// Check Params
+				let func_l = keycode.split('(');
+				let func = func_l[0];
+				let param = func_l[func_l.length-1];
+				param = param.substring(0, param.length-(func_l.length-1))
+				let param_l = param.split(',');
+
+				// LAYER_FUNC(LAYER)
+				if (func in C.KEYPLUS_LAYER) {
+
+					keycode = '\'' + C.KEYPLUS_LAYER[func] + param + '\'';
+				}
+				// MOD-KEYS
+				else if (func == 'MOD') {
+
+					let first = param_l[0].replace(/ /g,'');
+					let second = param_l[1].replace(/ /g,'');
+
+					if (second in C.KEYPLUS_KEYCODES) { keycode = C.KEYPLUS_KEYCODES[second]; } 
+					else keycode = '____';
+
+					keycode = '\'' + first + '-' + keycode + '\'';
+				}
+				// TAP>LAYER & TAP>MOD
+				else if (func in C.KEYPLUS_DOUBLE && param_l.length == 2) {
+
+					let first = param_l[0].replace(/ /g,'');
+					let second = param_l[1].replace(/ /g,'');
+
+					// MT(CSAG, kc)
+					if (func == 'MT' && second in C.KEYPLUS_KEYCODES) {
+
+						let tap = C.KEYPLUS_KEYCODES[second]
+						let hold = first +'-none'
+						keycode = '\'' + tap + '>' + hold + '\'';
+						// temp Code for explicit definition of 'tap>hold'
+						if (explicit.length == 0) { explicit += '\nkeycodes:\n' }
+						explicit += '  '+keycode+':\n    keycode: hold\n    delay: 200\n'
+						explicit += '    tap_key: '+tap+'\n'
+						explicit += '    hold_key: '+hold+'\n\n'
+					}
+					// LT(LAYER, kc)
+					else if (func == 'LT' && second in C.KEYPLUS_KEYCODES) {
+
+						let tap = C.KEYPLUS_KEYCODES[second]
+						let hold = C.KEYPLUS_DOUBLE[func]
+						keycode = '\'' + tap + '>' + hold + first + '\'';
+						// temp Code for explicit definition of 'tap>hold'
+						if (explicit.length == 0) { explicit += '\nkeycodes:\n' }
+						explicit += '  '+keycode+':\n    keycode: hold\n    delay: 200\n'
+						explicit += '    tap_key: '+tap+'\n'
+						explicit += '    hold_key: '+hold+'\n\n'
+					}
+					else keycode = '____';
+				}
+				else keycode = '____';
+			}
+		}
+		// Keycodes
+		else {
+			if (keycode in C.KEYPLUS_KEYCODES) {
+
+				keycode = '\'' + C.KEYPLUS_KEYCODES[keycode] + '\'';
+			}
+		}
+		layerMap += keycode + ', ';
+	}
+	layerMap += '\n          ';
+}
+
+
+// Generate the matrix
+let matrix = '';
+const rowLength = String(keyboard.rows).length;
+const colLength = String(keyboard.cols).length;
+const space = ' '.repeat(rowLength + colLength + 3);
+
+for (let row = 0; row < keyboard.rows; row ++) {
+	let rowString = '';
+	for (let col = 0; col < keyboard.cols; col ++) {
+		if (keyboard.wiring[row + ',' + col]) { rowString += 'r' + String(row) + 'c' + String(col) + ', '; }
+		else { rowString += space; }
+	}
+	matrix += '        ' + rowString + '\n';
+}
+matrix = matrix.substring(0, matrix.length - 4);
+*/
+
 },{"./index":227,"./templates/layout.yaml":229,"const":223}],229:[function(require,module,exports){
 "use strict";
 
-module.exports = "\n# Generated by Keyplus Builder by 2Cas (c) 2018\n# Modified from QMK Builder by Ruiqimao (c) 2018\n# https://github.com/2Cas/keyplus_builder\n# This file is released into the public domain as per the CC0 Public Domain\n# Dedication (http://creativecommons.org/publicdomain/zero/1.0/)\n---\n\nreport_mode : auto_nkro # options: auto_nkro, 6kro, nkro\n\ndevices:\n  %kb_name%:\n    id: 0\n    layout: default\n    layout_offset: 0\n    scan_mode:\n      mode: %diode_direction% # options:  col_row, row_col, pins, none\n      rows: [%row_pins%]\n      cols: [%col_pins%]\n      # Maps how keys are physically wired, to how they appear visually\n      matrix_map: [\n%matrix%\n      ]\n      # Debounce settings\n      debounce:\n         debounce_time_press: 5\n         debounce_time_release: 5\n         trigger_time_press: 1\n         trigger_time_release: 1\n         parasitic_discharge_delay_idle: 10.0\n         parasitic_discharge_delay_debouncing: 10.0\n%explicit_defs%\nlayouts:\n  default:\n    default_layer: 0\n    layers: [\n%layout%]\n    ]\n\n".trim();
+module.exports = "\n# Generated by Keyplus Builder by 2Cas (c) 2018\n# Modified from QMK Builder by Ruiqimao (c) 2018\n# https://github.com/2Cas/keyplus_builder\n# This file is released into the public domain as per the CC0 Public Domain\n# Dedication (http://creativecommons.org/publicdomain/zero/1.0/)\n---\n\nreport_mode : auto_nkro # options: auto_nkro, 6kro, nkro\n\ndevices:\n  %kb_name%:\n    id: 0\n    %mcu%\n    layout: default\n    layout_offset: 0\n    %kle%\n    scan_mode:\n      mode: %diode_direction% # options:  col_row, row_col, pins, none\n      rows: [%row_pins%]\n      cols: [%col_pins%]\n      # Maps how keys are physically wired, to how they appear visually\n      matrix_map: [\n%matrix%\n      ]\n      # Debounce settings\n      debounce:\n         debounce_time_press: 5\n         debounce_time_release: 5\n         trigger_time_press: 1\n         trigger_time_release: 1\n         parasitic_discharge_delay_idle: 10.0\n         parasitic_discharge_delay_debouncing: 10.0\n%explicit_defs%\nlayouts:\n  default:\n    default_layer: 0\n    layers: [\n%layout%]\n    ]\n\n".trim();
 
 },{}],230:[function(require,module,exports){
 'use strict';
@@ -30108,53 +30214,19 @@ var Main = function (_React$Component) {
 		var _this = _possibleConstructorReturn(this, (Main.__proto__ || Object.getPrototypeOf(Main)).call(this, props));
 
 		_this.upload = _this.upload.bind(_this);
-		_this.upload_keyplus_yaml = _this.upload_keyplus_yaml.bind(_this);
 		_this.useKLE = _this.useKLE.bind(_this);
 		_this.usePreset = _this.usePreset.bind(_this);
 		return _this;
 	}
 
 	/*
-  * Upload a QMK Builder configuration.
+  * Upload a Keyplus YAML
   */
 
 
 	_createClass(Main, [{
 		key: 'upload',
 		value: function upload() {
-			var state = this.props.state;
-
-			// Upload a file.
-			Utils.readFile(function (contents) {
-				try {
-					// Deserialize the contents.
-					var deserialized = JSON.parse(contents);
-
-					// Ensure the version is correct.
-					if (deserialized.version !== C.VERSION) throw 'version mismatch';
-
-					// Build a new keyboard.
-					var keyboard = Keyboard.deserialize(state, deserialized.keyboard);
-					console.log(keyboard);
-
-					state.update({
-						keyboard: keyboard,
-						screen: C.SCREEN_KEYMAP // Switch to the wiring screen.
-					});
-				} catch (e) {
-					console.error(e);
-					state.error('Invalid configuration');
-				}
-			});
-		}
-
-		/*
-   * Upload a Keyplus YAML
-   */
-
-	}, {
-		key: 'upload_keyplus_yaml',
-		value: function upload_keyplus_yaml() {
 			var state = this.props.state;
 
 			// Upload a file.
@@ -30210,10 +30282,10 @@ var Main = function (_React$Component) {
 			var state = this.props.state;
 
 			try {
-				var json = parser.parse('[' + state.ui.get('kle', '') + ']'); // Parse the raw data.
+				var data = parser.parse('[' + state.ui.get('kle', '') + ']'); // Parse the raw data.
 
 				// Parse the KLE data.
-				var keyboard = new Keyboard(state, json);
+				var keyboard = new Keyboard(state, data, false);
 				console.log(keyboard);
 
 				// Make sure the data is valid.
@@ -30243,24 +30315,43 @@ var Main = function (_React$Component) {
 		value: function usePreset(id) {
 			var state = this.props.state;
 
-			Request.get(C.LOCAL.PRESETS + id + '.json').end(function (err, res) {
+			Request.get(C.LOCAL.PRESETS + id + '.yaml').end(function (err, res) {
 				if (err) return state.error('Unable to load preset.');
 
 				try {
+					var contents = res.text;
+					for (var key in C.KLE_VARS) {
+						var value = C.KLE_VARS[key];
+						var reg = new RegExp(key, "g");
+						contents = contents.replace(reg, value);
+					}
 					// Deserialize the contents.
-					var deserialized = JSON.parse(res.text);
+					var data = YAML.safeLoad(contents);
 
-					// Ensure the version is correct.
-					if (deserialized.version !== C.VERSION) throw 'version mismatch';
+					var devices = Object.keys(data['devices']);
+					// for name in devices would go here
+					var name = devices[0];
+					var layout_name = data['devices'][name]['layout'];
 
-					// Build a new keyboard.
-					var keyboard = Keyboard.deserialize(state, deserialized.keyboard);
+					var info = {
+						'name': name,
+						//'id': data['devices'][name]['id'],
+						'mcu': data['devices'][name]['mcu'],
+						//'layout_offset': data['devices'][name]['layout_offset'],
+						'diode': data['devices'][name]['scan_mode']['mode'],
+						'rows': data['devices'][name]['scan_mode']['rows'],
+						'cols': data['devices'][name]['scan_mode']['cols'],
+						'matrix': data['devices'][name]['scan_mode']['matrix_map'],
+						'kle': data['devices'][name]['studio_kle'],
+						'keymap': data['layouts'][layout_name]['layers']
 
+						// Build a new keyboard
+					};var keyboard = new Keyboard(state, info, true);
 					console.log(keyboard);
 
 					state.update({
 						keyboard: keyboard,
-						screen: C.SCREEN_KEYMAP // Switch to the keymap screen.
+						screen: C.SCREEN_KEYMAP // Switch to the wiring screen.
 					});
 				} catch (e) {
 					console.error(e);
@@ -30281,7 +30372,7 @@ var Main = function (_React$Component) {
 				React.createElement(
 					'h3',
 					null,
-					'Upload Keyboard Firmware Builder configuration'
+					'Upload keyplus format yaml'
 				),
 				React.createElement(
 					'button',
@@ -30295,21 +30386,7 @@ var Main = function (_React$Component) {
 				React.createElement(
 					'h3',
 					null,
-					'Upload keyplus format yaml'
-				),
-				React.createElement(
-					'button',
-					{
-						className: 'block',
-						onClick: this.upload_keyplus_yaml },
-					'Upload'
-				),
-				React.createElement('br', null),
-				React.createElement('br', null),
-				React.createElement(
-					'h3',
-					null,
-					'Or import from keyboard-layout-editor.com'
+					'Import from keyboard-layout-editor.com (keyboard makers only)'
 				),
 				React.createElement('textarea', {
 					className: 'kle',
@@ -30369,6 +30446,67 @@ module.exports = Main;
 	Upload
 </button>
 <br/><br/>
+*/
+
+/*
+	upload() {
+		const state = this.props.state;
+
+		// Upload a file.
+		Utils.readFile(contents => {
+			try {
+				// Deserialize the contents.
+				const deserialized = JSON.parse(contents);
+
+				// Ensure the version is correct.
+				if (deserialized.version !== C.VERSION) throw 'version mismatch';
+
+				// Build a new keyboard.
+				const keyboard = Keyboard.deserialize(state, deserialized.keyboard);
+				console.log(keyboard)
+
+				state.update({
+					keyboard: keyboard,
+					screen: C.SCREEN_KEYMAP // Switch to the wiring screen.
+				});
+			} catch (e) {
+				console.error(e);
+				state.error('Invalid configuration');
+			}
+		});
+	}
+
+
+	usePreset(id) {
+			const state = this.props.state;
+
+			Request
+				.get(C.LOCAL.PRESETS + id + '.json')
+				.end((err, res) => {
+					if (err) return state.error('Unable to load preset.');
+
+					try {
+						// Deserialize the contents.
+						const deserialized = JSON.parse(res.text);
+
+						// Ensure the version is correct.
+						if (deserialized.version !== C.VERSION) throw 'version mismatch';
+
+						// Build a new keyboard.
+						const keyboard = Keyboard.deserialize(state, deserialized.keyboard);
+
+						console.log(keyboard)
+
+						state.update({
+							keyboard: keyboard,
+							screen: C.SCREEN_KEYMAP // Switch to the keymap screen.
+						});
+					} catch (e) {
+						console.error(e);
+						state.error('Invalid configuration');
+					}
+				});
+		}
 */
 
 },{"const":223,"js-yaml":27,"react":215,"state/keyboard":236,"superagent":217,"utils":263}],235:[function(require,module,exports){
@@ -30532,20 +30670,9 @@ var Keyboard = function () {
 		// YAML
 		else {
 				/*
-    		'mcu' DONE 
-    		'diode' DONE 
-    		'rows' DONE
-    		'cols' DONE
-    		'matrix' DONE 
-    		'kle' DONE 
-    		'keymap' DONE
-    			TODO: 
-    		build simple kle if none is provided
-    		finish keymap parsing
-    		Fix export
-    		Redo mod-keys
-    		Robust checks (length of keymap array should be same as number of keys generated by KLE)
-    	*/
+    	TODO:
+    	Robust checks (length of keymap array should be same as number of keys generated by KLE)
+    */
 				this.settings['name'] = data['name'];
 				switch (data['mcu']) {
 					// ATMEGA
@@ -30581,136 +30708,142 @@ var Keyboard = function () {
 
 							for (var layer = 0; layer < data['keymap'].length; layer++) {
 								var keycode = data['keymap'][layer][0][index];
-
-								// Keycodes
-								// TODO: Remove Inverts
-								if (keycode in _.invert(C.KEYPLUS_KEYCODES)) {
-									keycode = _.invert(C.KEYPLUS_KEYCODES)[keycode];
-									keycode = Keycode.getDefault(keycode);
-									key.keycodes[layer] = keycode;
+								console.log(keycode);
+								if (!keycode) {
+									continue;
 								}
-								// Layer functions
-								else {
+								// Keycodes
+								else if (keycode in _.invert(C.KEYPLUS_KEYCODES)) {
+										keycode = _.invert(C.KEYPLUS_KEYCODES)[keycode];
+										keycode = Keycode.getDefault(keycode);
+										key.keycodes[layer] = keycode;
+									}
+									// Layer functions
+									else {
 
-										var OSM = {
-											"s_lctrl": 1,
-											"s_lsft": 2,
-											"s_lalt": 4,
-											"s_lgui": 8,
-											"s_rctrl": 16,
-											"s_rsft": 32,
-											"s_ralt": 64,
-											"s_rgui": 128
-										};
-										var L = keycode.lastIndexOf('L');
+											var OSM = {
+												"s_lctrl": 1,
+												"s_lsft": 2,
+												"s_lalt": 4,
+												"s_lgui": 8,
+												"s_rctrl": 16,
+												"s_rsft": 32,
+												"s_ralt": 64,
+												"s_rgui": 128
+											};
+											var L = keycode.lastIndexOf('L');
 
-										// Mod-keys
-										if (keycode.includes('-') && !keycode.includes('>')) {
-											keycode = keycode.split('-');
-											var mods = keycode[0];
-											var target = keycode[1];
-											var first_keycode = void 0,
-											    mod = void 0;
-											// TODO: Replace with simple bitwise MOD() function
-											for (var _index = 0; _index < mods.length; _index++) {
-												if (mods[_index] == 'r') {
-													mod = mods.substring(_index, _index + 2);
-												} else {
-													mod = mods[_index];
-												}
-												// TODO: Remove Inverts
-												if (mod in _.invert(C.KEYPLUS_MODS)) {
-													mod = _.invert(C.KEYPLUS_MODS)[mod];
-													var new_keycode = Keycode.getDefault(mod + '()');
-													if (keycode.constructor === Array) {
-														keycode = new_keycode;
-														first_keycode = keycode;
-													} else {
-														keycode.fields = [new_keycode];
-														keycode = new_keycode;
+											// Mod-keys
+											if (keycode.includes('-') && !keycode.includes('>')) {
+												var params = keycode.split('-');
+												var mods = params[0];
+												var kc = params[1];
+
+												if (kc in _.invert(C.KEYPLUS_KEYCODES)) {
+													kc = _.invert(C.KEYPLUS_KEYCODES)[kc];
+													// Simple bitwise MOD() function
+													keycode = Keycode.getDefault('MOD()');
+													var modbit = 0;
+													if (mods.includes('rC')) {
+														modbit = modbit | 16;mods.replace(/rC/g, '');
 													}
-												}
-												_index++;
-											}
-											// TODO: Remove Inverts
-											if (target in _.invert(C.KEYPLUS_KEYCODES) && keycode.constructor !== Array) {
-												target = _.invert(C.KEYPLUS_KEYCODES)[target];
-												keycode.fields = [Keycode.getDefault(target)];
-												key.keycodes[layer] = first_keycode;
-											}
-										}
-										// Tap-keys
-										else if (keycode.includes('>')) {
-												keycode = keycode.split('>');
-												var kc = keycode[0];
-												var _target = keycode[1];
-												var _L = _target.lastIndexOf('L');
-												// Tap>Layer
-												if (_L > -1) {
-													var layer_func = _target.substring(0, _L + 1);
-													var l_index = Number(_target.substring(_L + 1, _target.length));
-
-													if (layer_func == 'L' && kc in _.invert(C.KEYPLUS_KEYCODES)) {
-														keycode = Keycode.getDefault('LT()');
-														kc = _.invert(C.KEYPLUS_KEYCODES)[kc];
-														keycode.fields = [l_index, Keycode.getDefault(kc)];
-														key.keycodes[layer] = keycode;
+													if (mods.includes('rS')) {
+														modbit = modbit | 32;mods.replace(/rS/g, '');
 													}
-												}
-												//Tap>Mod
-												else if (_target.includes('-') && kc in _.invert(C.KEYPLUS_KEYCODES)) {
-														keycode = Keycode.getDefault('MT()');
-														_target = _target.replace('-none', '');
-														var modbit = 0;
-														if (_target.includes('rC')) {
-															modbit = modbit | 16;_target.replace(/rC/g, '');
-														}
-														if (_target.includes('rS')) {
-															modbit = modbit | 32;_target.replace(/rS/g, '');
-														}
-														if (_target.includes('rA')) {
-															modbit = modbit | 64;_target.replace(/rA/g, '');
-														}
-														if (_target.includes('rG')) {
-															modbit = modbit | 128;_target.replace(/rG/g, '');
-														}
-														if (_target.includes('C')) {
-															modbit = modbit | 1;
-														}
-														if (_target.includes('S')) {
-															modbit = modbit | 2;
-														}
-														if (_target.includes('A')) {
-															modbit = modbit | 4;
-														}
-														if (_target.includes('G')) {
-															modbit = modbit | 8;
-														}
-
-														kc = _.invert(C.KEYPLUS_KEYCODES)[kc];
-														keycode.fields = [modbit, Keycode.getDefault(kc)];
-														key.keycodes[layer] = keycode;
+													if (mods.includes('rA')) {
+														modbit = modbit | 64;mods.replace(/rA/g, '');
 													}
-											}
-											// Layer functions
-											else if (L > -1) {
-													var func = keycode.substring(0, L + 1);
-													var _target2 = Number(keycode.substring(L + 1, keycode.length));
-
-													if (func in _.invert(C.KEYPLUS_LAYER)) {
-														func = _.invert(C.KEYPLUS_LAYER)[func];
-														keycode = Keycode.getDefault(func + '()');
-														keycode.fields = [_target2];
-														key.keycodes[layer] = keycode;
+													if (mods.includes('rG')) {
+														modbit = modbit | 128;mods.replace(/rG/g, '');
 													}
-												} else if (keycode in OSM) {
-													console.log(keycode);
-													var _modbit = OSM[keycode];
-													keycode = Keycode.getDefault('OSM()');
-													keycode.fields = [_modbit];
+													if (mods.includes('C')) {
+														modbit = modbit | 1;
+													}
+													if (mods.includes('S')) {
+														modbit = modbit | 2;
+													}
+													if (mods.includes('A')) {
+														modbit = modbit | 4;
+													}
+													if (mods.includes('G')) {
+														modbit = modbit | 8;
+													}
+
+													keycode.fields = [modbit, Keycode.getDefault(kc)];
 													key.keycodes[layer] = keycode;
 												}
-									}
+											}
+											// Tap-keys
+											else if (keycode.includes('>')) {
+													keycode = keycode.split('>');
+													var _kc = keycode[0];
+													var target = keycode[1];
+													var _L = target.lastIndexOf('L');
+													// Tap>Layer
+													if (_L > -1) {
+														var layer_func = target.substring(0, _L + 1);
+														var l_index = Number(target.substring(_L + 1, target.length));
+
+														if (layer_func == 'L' && _kc in _.invert(C.KEYPLUS_KEYCODES)) {
+															keycode = Keycode.getDefault('LT()');
+															_kc = _.invert(C.KEYPLUS_KEYCODES)[_kc];
+															keycode.fields = [l_index, Keycode.getDefault(_kc)];
+															key.keycodes[layer] = keycode;
+														}
+													}
+													//Tap>Mod
+													else if (target.includes('-') && _kc in _.invert(C.KEYPLUS_KEYCODES)) {
+															keycode = Keycode.getDefault('MT()');
+															target = target.replace('-none', '');
+															var _modbit = 0;
+															if (target.includes('rC')) {
+																_modbit = _modbit | 16;target.replace(/rC/g, '');
+															}
+															if (target.includes('rS')) {
+																_modbit = _modbit | 32;target.replace(/rS/g, '');
+															}
+															if (target.includes('rA')) {
+																_modbit = _modbit | 64;target.replace(/rA/g, '');
+															}
+															if (target.includes('rG')) {
+																_modbit = _modbit | 128;target.replace(/rG/g, '');
+															}
+															if (target.includes('C')) {
+																_modbit = _modbit | 1;
+															}
+															if (target.includes('S')) {
+																_modbit = _modbit | 2;
+															}
+															if (target.includes('A')) {
+																_modbit = _modbit | 4;
+															}
+															if (target.includes('G')) {
+																_modbit = _modbit | 8;
+															}
+
+															_kc = _.invert(C.KEYPLUS_KEYCODES)[_kc];
+															keycode.fields = [_modbit, Keycode.getDefault(_kc)];
+															key.keycodes[layer] = keycode;
+														}
+												}
+												// Layer functions
+												else if (L > -1) {
+														var func = keycode.substring(0, L + 1);
+														var _target = Number(keycode.substring(L + 1, keycode.length));
+
+														if (func in _.invert(C.KEYPLUS_LAYER)) {
+															func = _.invert(C.KEYPLUS_LAYER)[func];
+															keycode = Keycode.getDefault(func + '()');
+															keycode.fields = [_target];
+															key.keycodes[layer] = keycode;
+														}
+													} else if (keycode in OSM) {
+														var _modbit2 = OSM[keycode];
+														keycode = Keycode.getDefault('OSM()');
+														keycode.fields = [_modbit2];
+														key.keycodes[layer] = keycode;
+													}
+										}
 							}
 
 							var row_col = data['matrix'][index];
@@ -30925,7 +31058,7 @@ var Keyboard = function () {
 
 	}, {
 		key: 'importKLE',
-		value: function importKLE(json) {
+		value: function importKLE(data) {
 			// Define starting states.
 			var state = {
 				x: 0,
@@ -31633,6 +31766,43 @@ var Keyboard = function () {
 
 module.exports = Keyboard;
 
+/*
+if (keycode.includes('-') && !keycode.includes('>')) {
+	keycode = keycode.split('-');
+	let mods = keycode[0];
+	let target = keycode[1];
+	let first_keycode, mod;
+	// TODO: Replace with simple bitwise MOD() function
+	for (let index = 0; index < mods.length; index++) {
+		if (mods[index] == 'r') {
+			mod = mods.substring(index, index+2);
+		}
+		else {
+			mod = mods[index];
+		}
+		// TODO: Remove Inverts
+		if (mod in _.invert(C.KEYPLUS_MODS)) {
+			mod = (_.invert(C.KEYPLUS_MODS))[mod];
+			let new_keycode = Keycode.getDefault(mod+'()');
+			if (keycode.constructor === Array ) {
+				keycode = new_keycode;
+				first_keycode = keycode;
+			}
+			else {
+				keycode.fields = [ new_keycode ];
+				keycode = new_keycode;
+			}
+		}
+		index++;
+	}
+	if (target in  _.invert(C.KEYPLUS_KEYCODES) && keycode.constructor !== Array) {
+		target = (_.invert(C.KEYPLUS_KEYCODES))[target];
+		keycode.fields = [ Keycode.getDefault(target) ];
+		key.keycodes[layer] = first_keycode;
+	}
+}
+*/
+
 },{"./key":237,"./keycode":238,"const":223,"underscore":222}],237:[function(require,module,exports){
 'use strict';
 
@@ -31954,16 +32124,16 @@ var Keycode = function () {
 						{
 							// Get active mods.
 							var active = [];
-							if (field & 1) active.push('MOD_LCTL');
-							if (field & 2) active.push('MOD_LSFT');
-							if (field & 4) active.push('MOD_LALT');
-							if (field & 8) active.push('MOD_LGUI');
-							if (field & 16) active.push('MOD_RCTL');
-							if (field & 32) active.push('MOD_RSFT');
-							if (field & 64) active.push('MOD_RALT');
-							if (field & 128) active.push('MOD_RGUI');
+							if (field & 1) active.push('C');
+							if (field & 2) active.push('S');
+							if (field & 4) active.push('A');
+							if (field & 8) active.push('G');
+							if (field & 16) active.push('rC');
+							if (field & 32) active.push('rS');
+							if (field & 64) active.push('rA');
+							if (field & 128) active.push('rG');
 							if (active.length === 0) active.push(0);
-							fields.push(active.join('|'));
+							fields.push(active.join(''));
 							break;
 						}
 					case 'LAYER':
@@ -35184,14 +35354,6 @@ var Settings = function (_React$Component) {
 					'The number of backlight levels.'
 				),
 				React.createElement('div', { style: { height: '1.5rem' } }),
-				'Save your layout.',
-				React.createElement('div', { style: { height: '0.5rem' } }),
-				React.createElement(
-					'button',
-					{ onClick: this.save },
-					'Save Configuration'
-				),
-				React.createElement('div', { style: { height: '1.5rem' } }),
 				'Check errors and warnings.',
 				React.createElement('div', { style: { height: '0.5rem' } }),
 				React.createElement(
@@ -35207,6 +35369,16 @@ var Settings = function (_React$Component) {
 }(React.Component);
 
 module.exports = Settings;
+
+/*
+
+<div style={{ height: '1.5rem' }}/>
+Save your layout.
+<div style={{ height: '0.5rem' }}/>
+<button onClick={ this.save }>
+	Save Configuration
+</button>
+*/
 
 },{"const":223,"react":215,"ui/elements/help":245,"ui/elements/numberbox":246,"utils":263}],260:[function(require,module,exports){
 'use strict';

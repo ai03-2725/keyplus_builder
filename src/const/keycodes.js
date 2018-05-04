@@ -353,6 +353,7 @@ const keycodes = {
 	'KC_MEH': new Keycode('KC_MEH', 'MEH', []),
 
 	// Modifiers.
+	// Depreciated QMK functions
 	'LCTL()': new Keycode(new Template(['LCTL', 'KEY'], 'LCTL(%1)'), 'LCTRL + %1', []),
 	'LSFT()': new Keycode(new Template(['LSFT', 'KEY'], 'LSFT(%1)'), 'LSHIFT + %1', []),
 	'LALT()': new Keycode(new Template(['LALT', 'KEY'], 'LALT(%1)'), 'LALT + %1', []),
@@ -365,14 +366,6 @@ const keycodes = {
 	'MEH()': new Keycode(new Template(['MEH', 'KEY'], 'MEH(%1)'), 'MEH + %1', []),
 	'LCAG()': new Keycode(new Template(['LCAG', 'KEY'], 'LCAG(%1)'), 'LCAG + %1', []),
 	'ALTG()': new Keycode(new Template(['ALTG', 'KEY'], 'ALTG(%1)'), 'ALTGR + %1', []),
-	'LT()': new Keycode(new Template(['LT', 'LAYER', 'KEY'], 'LT(%1, %2)'), '%2>L%1', []),
-	'TO()': new Keycode(new Template(['TO', 'LAYER'], 'TO(%1)'), 't_L%1', []),
-	'MO()': new Keycode(new Template(['MO', 'LAYER'], 'MO(%1)'), 'L%1', []),
-	'DF()': new Keycode(new Template(['DF', 'LAYER'], 'DF(%1)'), 'DF(%1)', []),
-	'TG()': new Keycode(new Template(['TG', 'LAYER'], 'TG(%1)'), 'tog_L%1', []),
-	'OSL()': new Keycode(new Template(['OSL', 'LAYER'], 'OSL(%1)'), 'stickyL%1', []),
-	'OSM()': new Keycode(new Template(['OSM', 'MOD'], 'OSM(%1)'), 'sticky_%1', []),
-	'MT()': new Keycode(new Template(['MT', 'MOD', 'KEY'], 'MT(%1, %2)'), '%2>%1-none', []),
 	'CTL_T()': new Keycode(new Template(['CTL_T', 'KEY'], 'CTL_T(%1)'), '%1>C-none', []),
 	'SFT_T()': new Keycode(new Template(['SFT_T', 'KEY'], 'SFT_T(%1)'), '%1>S-none', []),
 	'ALT_T()': new Keycode(new Template(['ALT_T', 'KEY'], 'ALT_T(%1)'), '%1>A-none', []),
@@ -381,6 +374,16 @@ const keycodes = {
 	'MEH_T()': new Keycode(new Template(['MEH_T', 'KEY'], 'MEH_T(%1)'), '%1>CSA-none', []),
 	'LCAG_T()': new Keycode(new Template(['LCAG_T', 'KEY'], 'LCAG_T(%1)'), '%1>CAG-none', []),
 	'ALL_T()': new Keycode(new Template(['ALL_T', 'KEY'], 'ALL_T(%1)'), '%1>CSAG-none', []),
+
+	// Still active
+	'LT()': new Keycode(new Template(['LT', 'LAYER', 'KEY'], 'LT(%1, %2)'), '%2>L%1', []),
+	'TO()': new Keycode(new Template(['TO', 'LAYER'], 'TO(%1)'), 'set_L%1', []),
+	'MO()': new Keycode(new Template(['MO', 'LAYER'], 'MO(%1)'), 'L%1', []),
+	'DF()': new Keycode(new Template(['DF', 'LAYER'], 'DF(%1)'), 'DF(%1)', []),
+	'TG()': new Keycode(new Template(['TG', 'LAYER'], 'TG(%1)'), 'tog_L%1', []),
+	'OSL()': new Keycode(new Template(['OSL', 'LAYER'], 'OSL(%1)'), 'stickyL%1', []),
+	'OSM()': new Keycode(new Template(['OSM', 'MOD'], 'OSM(%1)'), 'sticky%1', []),
+	'MT()': new Keycode(new Template(['MT', 'MOD', 'KEY'], 'MT(%1, %2)'), '%2>%1-none', []),
 	'M()': new Keycode(new Template(['M', 'MACRO'], 'M(%1)'), 'MACRO(%1)', []),
 	// New additions
 	'MOD()' : new Keycode(new Template(['MOD', 'MOD', 'KEY'], 'MOD(%1, %2)'),  '%1-%2', []),
@@ -450,19 +453,15 @@ const categories = {
 
 		'KC_GESC', '',
 
-		//'LCTL()', 'LSFT()', 'LALT()', 'LGUI()',  'RCTL()', 'RSFT()', 'RALT()', 'RGUI()', '',
+		'MOD()', 'OSM()', 'MT()', '',
 
-		'MOD()', 'OSM()', '',
+		'TO()', 'MO()', 'TG()', 'OSL()', 'LT()', '', 
 
-		//'ALTG()', 'LCAG()', 'MEH()', 'HYPR()', '',
+	    'KC_MS_U', 'KC_MS_D', 'KC_MS_L', 'KC_MS_R', '',
 
-		'TO()', 'MO()', 'TG()', 'OSL()', '',
+	    'KC_WH_U', 'KC_WH_D', 'KC_WH_L', 'KC_WH_R', '',
 
-	    'LT()', 'MT()', '', //'CTL_T()', 'SFT_T()', 'ALT_T()', 'GUI_T()', '',
-
-		//'C_S_T()', 'MEH_T()', 'LCAG_T()', 'ALL_T()', '',
-
-		//'M()'
+	    'KC_BTN1', 'KC_BTN2', 'KC_BTN3', 'KC_BTN4', 'KC_BTN5', '',
 	]
 };
 
@@ -885,14 +884,14 @@ const keyplus_mods = {
     "MEH" : "CSA",
     "HYPR" : "CSAG",
 
-    "OSM(MOD_LSFT)" : "s_lsft",
-    "OSM(MOD_LCTL)" : "s_lctrl",
-    "OSM(MOD_LALT)" : "s_lalt",
-    "OSM(MOD_LGUI)" : "s_lgui",
-    "OSM(MOD_RCTL)" : "s_rctrl",
-    "OSM(MOD_RSFT)" : "s_rsft",
-    "OSM(MOD_RALT)" : "s_ralt",
-    "OSM(MOD_RGUI)" : "s_rgui",
+    "OSM(S)" : "s_lsft",
+    "OSM(C)" : "s_lctrl",
+    "OSM(A)" : "s_lalt",
+    "OSM(G)" : "s_lgui",
+    "OSM(rC)" : "s_rctrl",
+    "OSM(rS)" : "s_rsft",
+    "OSM(rA)" : "s_ralt",
+    "OSM(rG)" : "s_rgui",
 }
 
 const keyplus_double_param = {
@@ -928,26 +927,41 @@ const keyplus_modtap = {
 }
 
 const legacy_mods = {
-    "MOD_LSFT" : "S",
-    "MOD_LCTL" : "C",
-    "MOD_LALT" : "A",
-    "MOD_LGUI" : "G",
-    "MOD_RCTL" : "rC",
-    "MOD_RSFT" : "rS",
-    "MOD_RALT" : "rA",
-    "MOD_RGUI" : "rG",
-    "MOD_MEH"  : "CSA",
-    "MOD_HYPR" : "CSAG",
+    "S" : "S",
+    "C" : "C",
+    "A" : "A",
+    "G" : "G",
+    "rC" : "rC",
+    "rS" : "rS",
+    "rA" : "rA",
+    "rG" : "rG",
+    //"MOD_MEH"  : "CSA",
+    //"MOD_HYPR" : "CSAG",
 }
 
 const display_functions = {
-
+	//Grave-esc
 	'KC_GESC' : '`esc',
+	//Mouse keys
+    "KC_MS_U" : "ms_u",
+    "KC_MS_D" : "ms_d",
+    "KC_MS_L" : "ms_l",
+    "KC_MS_R" : "ms_r",
+    "KC_BTN1" : "btn1",
+    "KC_BTN2" : "btn2",
+    "KC_BTN3" : "btn3",
+    "KC_BTN4" : "btn4",
+    "KC_BTN5" : "btn5",
+    "KC_WH_U" : "wh_u",
+    "KC_WH_D" : "wh_d",
+    "KC_WH_L" : "wh_l",
+    "KC_WH_R" : "wh_r",
 	'KC_BTN1' : 'btn1',
 	'KC_BTN2' : 'btn2',
 	'KC_BTN3' : 'btn3',
 	'KC_BTN4' : 'btn4',
 	'KC_BTN5' : 'btn5',
+
 	'LCTL()' : 'C-', 
 	'LSFT()' : 'S-', 
 	'LALT()' : 'A-', 
