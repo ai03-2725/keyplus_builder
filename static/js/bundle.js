@@ -29834,7 +29834,7 @@ var KeyplusY = function (_Generator) {
 												}
 												explicit += '  ' + keycode + ':\n    keycode: hold\n    delay: 200\n';
 												explicit += '    tap_key: ' + _tap + '\n';
-												explicit += '    hold_key: ' + _hold + '\n\n';
+												explicit += '    hold_key: ' + _hold + _first + '\n\n';
 											} else keycode = '____';
 									} else keycode = '____';
 						}

@@ -105,7 +105,7 @@ class KeyplusY extends Generator {
 								if (explicit.length == 0) { explicit += '\nkeycodes:\n' }
 								explicit += '  '+keycode+':\n    keycode: hold\n    delay: 200\n'
 								explicit += '    tap_key: '+tap+'\n'
-								explicit += '    hold_key: '+hold+'\n\n'
+								explicit += '    hold_key: '+hold+first+'\n\n'
 							}
 							else keycode = '____';
 						}
