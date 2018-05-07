@@ -30168,9 +30168,8 @@ var Index = function (_React$Component) {
 				'div',
 				null,
 				React.createElement(
-					'div',
-					{ className: 'header' },
-					'keyplus builder'
+					'img',
+					{ src: 'static/images/keypluseditor.svg', className: 'titleimage' }
 				),
 				React.createElement(Screen, {
 					state: this.state })
@@ -30387,26 +30386,7 @@ var Main = function (_React$Component) {
 				React.createElement(
 					'h3',
 					null,
-					'Import from keyboard-layout-editor.com (keyboard makers only)'
-				),
-				React.createElement('textarea', {
-					className: 'kle',
-					placeholder: 'Paste layout here...',
-					value: state.ui.get('kle', ''),
-					onChange: state.ui.set('kle') }),
-				React.createElement(
-					'button',
-					{
-						className: 'block',
-						onClick: this.useKLE },
-					'Import'
-				),
-				React.createElement('br', null),
-				React.createElement('br', null),
-				React.createElement(
-					'h3',
-					null,
-					'Or choose a preset layout'
+					'Choose a layout preset'
 				),
 				function () {
 					var presets = [];
@@ -30429,7 +30409,27 @@ var Main = function (_React$Component) {
 						_loop(preset);
 					}
 					return presets;
-				}()
+				}(),
+				React.createElement('br', null),
+				React.createElement('br', null),
+				React.createElement(
+					'h3',
+					null,
+					'Import from keyboard-layout-editor.com (for keyboard makers)'
+				),
+				React.createElement('textarea', {
+					className: 'kle',
+					placeholder: 'Paste layout here...',
+					value: state.ui.get('kle', ''),
+					onChange: state.ui.set('kle') }),
+				React.createElement(
+					'button',
+					{
+						className: 'block',
+						onClick: this.useKLE },
+					'Import'
+				),
+				React.createElement('br', null)
 			);
 		}
 	}]);

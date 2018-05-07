@@ -1,10 +1,11 @@
 @import url(https://fonts.googleapis.com/css?family=Hind:400,300,500,700,600);
 @import url(https://fonts.googleapis.com/css?family=Lato:400,100,100italic,300,300italic,400italic,700,700italic,900,900italic);
 @import url(https://fonts.googleapis.com/css?family=Cousine);
+@import url(href="https://fonts.googleapis.com/css?family=Ubuntu);
 
 
 .header {
-	font-family: Hind;
+	font-family: Ubuntu;
 	font-size: 1.6rem;
 	font-weight: 600;
 	text-align: center;
@@ -21,7 +22,7 @@ body, html {
 }
 
 h2 {
-	font-family: Hind;
+	font-family: Ubuntu;
 	font-size: 1rem;
 	font-weight: 500;
 	color: #666666;
@@ -32,7 +33,7 @@ h2 {
 }
 
 h3 {
-	font-family: Hind;
+	font-family: Ubuntu;
 	font-size: 0.9rem;
 	font-weight: 500;
 	color: #666666;
@@ -44,7 +45,7 @@ h3 {
 }
 
 h4 {
-	font-family: Hind;
+	font-family: Ubuntu;
 	font-size: 0.9rem;
 	font-weight: 500;
 	color: #666666;
@@ -53,7 +54,7 @@ h4 {
 }
 
 h5 {
-	font-family: Hind;
+	font-family: Ubuntu;
 	font-size: 0.9rem;
 	font-weight: 400;
 	color: #888888;
@@ -80,7 +81,7 @@ button {
 	border-radius: 0.2rem;
 	line-height: 1.9rem;
 	padding: 0 0.7rem;
-	font-family: Lato;
+	font-family: Ubuntu;
 	font-size: 0.9rem;
 	color: #ffffff;
 	cursor: pointer;
@@ -134,7 +135,7 @@ textarea {
 	border: 1px solid #f0f0f0;
 	border-radius: 0.2rem;
 	padding: 0.5rem;
-	font-family: Cousine;
+	font-family: Ubuntu;
 	font-size: 0.8rem;
 	box-sizing: border-box;
 	text-align: left;
@@ -148,7 +149,7 @@ input[type="text"] {
 	border:1px solid #dddddd;
 	border-radius:0.2rem;
 	padding:0.3rem 0.5rem 0.4rem 0.5rem;
-	font-family:Lato;
+	font-family: Ubuntu;
 	font-size:0.9rem;
 	vertical-align:middle;
 	box-sizing: border-box;
@@ -190,7 +191,7 @@ select {
 	background-repeat: no-repeat;
 	background-size: contain;
 	background-color: #ffffff;
-	font-family: Lato;
+	font-family: Ubuntu;
 	font-size: 0.9rem;
 	border: 1px solid #dddddd;
 	outline: none;
@@ -232,7 +233,7 @@ select {
 	border: 1px solid #dddddd;
 	border-radius: 0.2rem;
 	padding: 0.4rem 0.5rem;
-	font-family: Lato;
+	font-family: Ubuntu;
 	font-size: 0.9rem;
 	vertical-align: middle;
 	width: 2rem;
@@ -259,7 +260,7 @@ select {
 	position: absolute;
 	margin-left: 1rem;
 	margin-top: 0.6rem;
-	font-family: Hind;
+	font-family: Ubuntu;
 	font-size: 0.8rem;
 	text-align: left;
 	color: #ffffff;
@@ -288,7 +289,7 @@ select {
 	margin: auto;
 	outline: none;
 	border-radius: 1px;
-	font-family: Lato;
+	font-family: Ubuntu;
 	cursor: pointer;
 	background: #ffffff;
 	border: 1px solid #dddddd;
@@ -438,7 +439,7 @@ select {
 
 .display-wire-label {
 	position: absolute;
-	font-family: Cousine;
+	font-family: Ubuntu;
 	font-size: 0.8rem;
 	font-weight: 500;
 	-webkit-transform: translateX(-50%) translateY(-50%);
@@ -463,12 +464,12 @@ select {
 .display-keycode-block {
 	position: absolute;
 	display: block;
-	top: 6px;
-	left: 10px;
+	top: 5px;
+	left: 11px;
 	right: 10px;
 	bottom: 6px;
 	z-index: 1;
-	font-family: Hind;
+	font-family: Ubuntu;
 	font-size: 0.75rem;
 	line-height: 3rem;
 	overflow: hidden;
@@ -497,7 +498,7 @@ select {
 }
 
 .panes-tab {
-	font-family: Lato;
+	font-family: Ubuntu;
 	font-size: 1.0rem;
 	font-weight: 600;
 	text-transform: lowercase;
@@ -518,7 +519,7 @@ select {
 
 .panes-content {
 	padding: 0 1.5rem 1rem 1.5rem;
-	font-family: Hind;
+	font-family: Ubuntu;
 	font-weight: 500;
 	font-size: 0.9rem;
 	color: #666666;
@@ -742,7 +743,7 @@ select {
 	text-align: left;
 	padding: 1rem 1rem 1rem 3rem;
 	border-top: 1px solid #dddddd;
-	font-family: Hind;
+	font-family: Ubuntu;
 	font-weight: 400;
 	vertical-align: middle;
 }
@@ -768,9 +769,20 @@ select {
 
 .footer {
 	text-align: center;
-	font-family:Lato;
+	font-family:Ubuntu;
 	font-size:0.9rem;
 	line-height:1.5rem;
 	color:#444444;
 	margin:2rem 0;
+}
+
+.titleimage {
+	display: block;
+	margin-right: auto;
+	margin-left: auto;
+	margin-top: -50px;
+	margin-bottom: -50px;
+	width: 50%;
+	min-width: 300px;
+	max-width: 450px;
 }

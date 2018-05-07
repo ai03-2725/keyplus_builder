@@ -1,8 +1,10 @@
+@import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono);
+
 /* BASICS */
 
 .CodeMirror {
   /* Set height, width, borders, and global font properties here */
-  font-family: monospace;
+  font-family: 'Ubuntu Mono', monospace;
   height: 300px;
   color: black;
 }
